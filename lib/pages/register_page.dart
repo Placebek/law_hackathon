@@ -1,3 +1,5 @@
+// ignore_for_file: unused_local_variable
+
 import 'package:flutter/material.dart';
 import 'package:law_code_flutter/api/auth_service.dart';
 import 'package:law_code_flutter/api/models/verification_request.dart';

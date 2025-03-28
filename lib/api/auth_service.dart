@@ -6,7 +6,7 @@ import 'models/register_response.dart';
 import 'token_manager.dart';
 
 class AuthService {
-  static const String _baseUrl = 'http://10.10.1.188:8000';
+  static const String _baseUrl = 'http://192.168.43.31:8000';
 
   // Отправка email для получения кода
   Future<bool> sendEmail(String email) async {
