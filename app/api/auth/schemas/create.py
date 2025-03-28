@@ -34,9 +34,10 @@ class AdminCreatePolice(BaseModel):
     last_name: Optional[str] = Field("", max_length=50)
     email: EmailStr = Field(..., max_length=50)
     phone_number: Optional[str] = Field(None, max_length=30)
-    rank: Optional[str] = Field("", max_length=255)
+    rank_id: int
     birth_day: Optional[date] 
     station_id: int
+    resume: Optional[str] = None
 
 '''Полиция'''
 class PoliceEmailRequest(BaseModel):

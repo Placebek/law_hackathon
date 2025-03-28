@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from law_hackathon.app.api.router import route as auth_route
+from app.api.router import route as auth_route
 
 
 app = FastAPI()

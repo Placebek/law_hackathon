@@ -27,11 +27,12 @@ async def create_policeman(policeman: AdminCreatePolice, db: AsyncSession):
                 first_name=policeman.first_name,
                 last_name=policeman.last_name,
                 phone_number=policeman.phone_number,
-                rank=policeman.rank,
+                rank_id=policeman.rank_id,
                 birth_day=policeman.birth_day,
                 station_id=policeman.station_id,
                 is_active=False,
-                verification_code=verification_code
+                verification_code=verification_code,
+                resume=policeman.resume,
             )
         )
         logger.info(f"Updated policeman with email: {policeman.email}")
