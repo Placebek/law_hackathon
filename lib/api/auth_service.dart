@@ -6,12 +6,12 @@ import 'models/register_response.dart';
 import 'token_manager.dart';
 
 class AuthService {
-  static const String _baseUrl = 'http://192.168.75.31:8000';
+  static const String _baseUrl = 'http://10.10.1.188:8000';
 
   // Отправка email для получения кода
   Future<bool> sendEmail(String email) async {
     final response = await http.post(
-      Uri.parse('$_baseUrl/auth/send_email'),
+      Uri.parse('$_baseUrl/api/auth/send_email'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'email': email}),
     );
@@ -26,7 +26,7 @@ class AuthService {
   // Проверка кода
   Future<bool> verifyCode(VerificationRequest request) async {
     final response = await http.post(
-      Uri.parse('$_baseUrl/auth/verify'),
+      Uri.parse('$_baseUrl/api/auth/verify'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode(request.toJson()),
     );
@@ -41,7 +41,7 @@ class AuthService {
   // Регистрация
   Future<RegisterResponse> register(RegisterRequest request) async {
     final response = await http.post(
-      Uri.parse('$_baseUrl/auth/register'),
+      Uri.parse('$_baseUrl/api/auth/register'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode(request.toJson()),
     );
@@ -58,7 +58,7 @@ class AuthService {
   // Логин
   Future<RegisterResponse> login(String email, String password) async {
     final response = await http.post(
-      Uri.parse('$_baseUrl/auth/login'),
+      Uri.parse('$_baseUrl/api/user/login'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
         'email': email,

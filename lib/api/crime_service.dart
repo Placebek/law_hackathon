@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'models/crime.dart';
 
 class CrimeService {
-  static const String _baseUrl = 'http://192.168.9.31:8000';
+  static const String _baseUrl = 'http://10.10.1.188:8000';
 
   Future<List<Crime>> getCrimes({
     required double latitude,

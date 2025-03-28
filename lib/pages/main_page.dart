@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'map_page.dart';
+import 'chat_page.dart'; // Добавляем импорт для страницы чата
 
 class MainPage extends StatelessWidget {
   @override
@@ -23,33 +24,39 @@ class MainPage extends StatelessWidget {
                 }
               },
               style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red, // Цвет фона кнопки
-                  padding: EdgeInsets.all(40),
-                  shape: CircleBorder(
-                    side: BorderSide(
-                      color: Colors.white, // Цвет границы
-                      width: 4, // Ширина границы
-                    ),
-                  )),
+                backgroundColor: Colors.red,
+                padding: EdgeInsets.all(40),
+                shape: CircleBorder(
+                  side: BorderSide(
+                    color: Colors.white,
+                    width: 4,
+                  ),
+                ),
+              ),
               child: Text(
                 '102',
                 style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold),
-                // Устанавливаем белый цвет текста
+                  color: Colors.white,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
             SizedBox(height: 20),
             ElevatedButton(
               onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Экстренное сообщение отправлено')),
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => ChatPage()),
                 );
               },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue, // Цвет кнопки
+                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+              ),
               child: Text(
-                'Отправить сигнал тревоги',
-                style: TextStyle(color: Colors.white),
+                'Написать службе безопасности',
+                style: TextStyle(color: Colors.white, fontSize: 16),
               ),
             ),
             SizedBox(height: 20),

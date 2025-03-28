@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class ApiClient {
-  static const String baseUrl = 'http://192.168.9.31:3000';
+  static const String baseUrl = 'http://10.10.1.188:8000';
 
   // GET-запрос
   Future<Map<String, dynamic>> get(String endpoint) async {
