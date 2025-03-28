@@ -9,7 +9,7 @@ from app.api.messages.schemas.response import MessageResponse, ChatResponse, Pol
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
-async def create_message(user_id: int, latitude: float, longitude: float, db: AsyncSession) -> ChatResponse:
+async def get_or_create_chat(user_id: int, latitude: float, longitude: float, db: AsyncSession) -> ChatResponse:
     query = text("""
         SELECT s.id, s.station_name
         FROM stations s
