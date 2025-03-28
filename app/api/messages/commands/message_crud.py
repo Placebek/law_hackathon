@@ -1,71 +1,39 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, text
-from model.model import Message, Chat,  Station, Policeman, User
-import logging
+from sqlalchemy import select
+from model.model import Chat, Message, Policeman
+from app.api.messages.schemas.response import MessageResponse
 from app.api.messages.schemas.create import MessageCreate
-from app.api.messages.schemas.response import MessageResponse, ChatResponse, PolicemanResponse, StationResponse
-
+import logging
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
+handler = logging.StreamHandler()
+handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
+logger.addHandler(handler)
+logger.setLevel(logging.DEBUG)
 
-async def get_or_create_chat(user_id: int, latitude: float, longitude: float, db: AsyncSession) -> ChatResponse:
-    query = text("""
-        SELECT s.id, s.station_name
-        FROM stations s
-        JOIN geolocations g ON s.geolocation_id = g.id
-        ORDER BY ST_Distance(
-            ST_SetSRID(ST_MakePoint(:longitude, :latitude), 4326)::geography,
-            ST_SetSRID(ST_MakePoint(g.longitude, g.latitude), 4326)::geography
-        )
-        LIMIT 1
-    """)
-
-    result = await db.execute(query, {"latitude": latitude, "longitude": longitude})
-    station = result.fetchone()
-
-    if not station:
-        raise ValueError("No police stations found")
-    
-    station_id = station[0]
-
-    policeman_query = select(Policeman).where(Policeman.station_id == station_id).limit(1)
-    result = await db.execute(policeman_query)
-    policeman = result.scalar_one_or_none()
-
-    if not policeman:
-        raise ValueError("No policeman available at the nearest station")
-    
-    chat_query = select(Chat).where(Chat.user_id == user_id, Chat.policeman_id == policeman.id)
+async def get_or_create_chat(user_id: int, policeman_id: int, db: AsyncSession) -> int:
+    """Получить или создать чат между пользователем и полицейским."""
+    logger.debug(f"Attempting to get or create chat for user_id={user_id}, policeman_id={policeman_id}")
+    chat_query = select(Chat).where(Chat.user_id == user_id, Chat.policeman_id == policeman_id)
     result = await db.execute(chat_query)
     chat = result.scalar_one_or_none()
-
+    
     if not chat:
-        chat = Chat(user_id=user_id, policeman_id=policeman.id)
+        chat = Chat(user_id=user_id, policeman_id=policeman_id)
         db.add(chat)
         await db.commit()
         await db.refresh(chat)
+    logger.info(f"Chat ID={chat.id} retrieved or created for user_id={user_id} and policeman_id={policeman_id}")
+    return chat.id
 
-    logger.info(f"Chat retrieved or created with ID {chat.id} for user {user_id} and policeman {policeman.id}")
-    return ChatResponse(
-        id=chat.id,
-        policeman=PolicemanResponse(
-            id=policeman.id,
-            first_name=policeman.first_name,
-            last_name=policeman.last_name,
-            phone_number=policeman.phone_number,
-            station=StationResponse(id=station_id, station_name=station[1])
-        ),
-        user_id=user_id
-    )
-
-async def create_message(chat_id: int, sender_id: int, db: AsyncSession, message: MessageCreate) -> MessageResponse:
+async def create_message(chat_id: int, sender_id: int, message: MessageCreate, db: AsyncSession) -> MessageResponse:
+    """Создать сообщение в чате."""
+    logger.debug(f"Creating message in chat_id={chat_id} from sender_id={sender_id}")
     db_message = Message(chat_id=chat_id, sender_id=sender_id, content=message.content)
     db.add(db_message)
     await db.commit()
     await db.refresh(db_message)
-    logger.info(f"Message created with ID {db_message.id} in chat {chat_id}")
-
+    logger.info(f"Message ID={db_message.id} created in chat_id={chat_id}")
     return MessageResponse(
         id=db_message.id,
         chat_id=db_message.chat_id,
@@ -74,7 +42,9 @@ async def create_message(chat_id: int, sender_id: int, db: AsyncSession, message
         created_at=db_message.created_at
     )
 
-async def get_chat_message(chat_id: int, db: AsyncSession) -> list[MessageResponse]:
+async def get_chat_messages(chat_id: int, db: AsyncSession) -> list[MessageResponse]:
+    """Получить все сообщения в чате."""
+    logger.debug(f"Fetching messages for chat_id={chat_id}")
     query = select(Message).where(Message.chat_id == chat_id).order_by(Message.created_at)
     result = await db.execute(query)
     messages = result.scalars().all()
@@ -85,3 +55,27 @@ async def get_chat_message(chat_id: int, db: AsyncSession) -> list[MessageRespon
         content=m.content,
         created_at=m.created_at
     ) for m in messages]
+
+async def get_active_policeman(db: AsyncSession) -> int:
+    """Получить ID первого активного полицейского."""
+    logger.debug("Fetching first active policeman")
+    policeman_query = select(Policeman).where(Policeman.is_active == True).limit(1)
+    result = await db.execute(policeman_query)
+    policeman = result.scalar_one_or_none()
+    if not policeman:
+        logger.error("No active policemen available")
+        raise ValueError("No active policemen available")
+    logger.debug(f"Found active policeman ID={policeman.id}")
+    return policeman.id
+
+async def get_chat_by_policeman(policeman_id: int, db: AsyncSession) -> int:
+    """Получить chat_id для полицейского."""
+    logger.debug(f"Fetching chat for policeman_id={policeman_id}")
+    chat_query = select(Chat).where(Chat.policeman_id == policeman_id)
+    result = await db.execute(chat_query)
+    chat = result.scalar_one_or_none()
+    if not chat:
+        logger.error(f"No chat found for policeman_id={policeman_id}")
+        raise ValueError("No chat found for this policeman")
+    logger.debug(f"Found chat_id={chat.id} for policeman_id={policeman_id}")
+    return chat.id

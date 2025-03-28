@@ -5,12 +5,7 @@ from app.api.router import route as auth_route
 
 app = FastAPI()
 
-origins = [
-    "http://192.168.193.31:5173",  
-    "http://172.20.10.2:5173",
-    "http://localhost:5173",
-    "http://146.0.60.15:5173" ,
-]
+origins = ["*"]
 
 app.add_middleware(
     CORSMiddleware,

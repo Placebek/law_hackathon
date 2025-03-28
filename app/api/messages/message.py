@@ -1,46 +1,101 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import Depends, APIRouter, WebSocket, WebSocketDisconnect, Request
-from app.api.messages.commands.message_crud import get_chat_message, create_message, get_or_create_chat
-from app.api.messages.schemas.create import MessageCreate
+from fastapi import Depends, APIRouter, WebSocket, WebSocketDisconnect, HTTPException
 from app.api.messages.schemas.response import WebSocketMessage, MessageResponse
+from app.api.messages.schemas.create import MessageCreate
 from database.db import get_db
-from app.api.auth.commands.context import validate_access_token_by_id, get_access_token
+from app.api.messages.commands.message_crud import get_or_create_chat, create_message, get_chat_messages, get_active_policeman, get_chat_by_policeman
 from sqlalchemy import select
-from model.model import User
-from app.api.messages.commands.websocket import ConnectionManager
+from model.model import User, Policeman
 import json
+import logging
+from jose import jwt, JWTError
+from datetime import datetime
+from core.config import settings
 
+async def validate_token(token: str, entity_type: str) -> int:
+    try:
+        payload = jwt.decode(token, settings.TOKEN_SECRET_KEY, algorithms=[settings.TOKEN_ALGORITHM])
+        entity_id = payload.get("sub")
+        if entity_id is None or payload.get("type") != entity_type:
+            raise HTTPException(status_code=401, detail=f"Invalid {entity_type} token")
+        exp = payload.get("exp")
+        if exp and exp < datetime.utcnow().timestamp():
+            raise HTTPException(status_code=401, detail="Token has expired")
+        return entity_id
+    except JWTError as e:
+        raise HTTPException(status_code=401, detail=f"Invalid token: {str(e)}")
+
+logger = logging.getLogger(__name__)
+handler = logging.StreamHandler()
+handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
+logger.addHandler(handler)
+logger.setLevel(logging.DEBUG)
 
 router = APIRouter()
 
+class ConnectionManager:
+    def __init__(self):
+        self.active_connections: dict[int, list[WebSocket]] = {}
+
+    async def connect(self, websocket: WebSocket, chat_id: int):
+        await websocket.accept()
+        if chat_id not in self.active_connections:
+            self.active_connections[chat_id] = []
+        self.active_connections[chat_id].append(websocket)
+        logger.debug(f"Connected to chat_id={chat_id}. Active connections: {len(self.active_connections[chat_id])}")
+
+    def disconnect(self, websocket: WebSocket, chat_id: int):
+        if chat_id in self.active_connections:
+            self.active_connections[chat_id].remove(websocket)
+            if not self.active_connections[chat_id]:
+                del self.active_connections[chat_id]
+        logger.debug(f"Disconnected from chat_id={chat_id}")
+
+    async def send_message(self, message: MessageResponse, chat_id: int):
+        if chat_id in self.active_connections:
+            message_json = message.model_dump_json()
+            for connection in self.active_connections[chat_id]:
+                await connection.send_text(message_json)
+
 manager = ConnectionManager()
 
-async def get_user_id_from_token(request: Request, db: AsyncSession) -> int:
-    access_token = await get_access_token(request)
-    email = await validate_access_token_by_id(access_token)
-    user_query = select(User).where(User.email == email)
-    result = await db.execute(user_query)
-    user = result.scalar_one_or_none()
-    if not user:
-        raise ValueError("User not found")
-    return user.id
-
 @router.websocket("/ws/chat")
-async def websocket_chat(websocket: WebSocket, request: Request, latitude: float, longitude: float, db: AsyncSession = Depends(get_db)):
+async def websocket_chat(
+    websocket: WebSocket,
+    token: str,
+    db: AsyncSession = Depends(get_db)
+):
+    logger.info(f"WebSocket connection attempt from {websocket.client.host}")
     try:
-        user_id = await get_user_id_from_token(request, db)
+        try:
+            user_id = await validate_token(token, "user")
+            entity_type = "user"
+            entity_query = select(User).where(User.id == user_id)
+            policeman_id = None
+        except HTTPException:
+            policeman_id = await validate_token(token, "policeman")
+            entity_type = "policeman"
+            entity_query = select(Policeman).where(Policeman.id == policeman_id)
+            user_id = None
+
+        result = await db.execute(entity_query)
+        entity = result.scalar_one_or_none()
+        if not entity:
+            raise ValueError(f"{entity_type.capitalize()} not found")
+        logger.info(f"{entity_type.capitalize()} authenticated: ID={entity.id}")
+
+        if entity_type == "user":
+            policeman_id = await get_active_policeman(db)
+            chat_id = await get_or_create_chat(user_id=user_id, policeman_id=policeman_id, db=db)
+        else:
+            chat_id = await get_chat_by_policeman(policeman_id=policeman_id, db=db)
     except Exception as e:
+        logger.error(f"Authentication or chat setup failed: {str(e)}")
         await websocket.close(code=1008, reason=str(e))
         return
 
-    try:
-        chat = await get_or_create_chat(user_id=user_id, latitude=latitude, longitude=longitude, db=db)
-        chat_id = chat.id
-    except Exception as e:
-        await websocket.close(code=1008, reason=str(e))
-
     await manager.connect(websocket, chat_id)
-    messages = await get_chat_message(chat_id, db)
+    messages = await get_chat_messages(chat_id, db)
     for message in messages:
         await manager.send_message(message, chat_id)
     
@@ -48,11 +103,9 @@ async def websocket_chat(websocket: WebSocket, request: Request, latitude: float
         while True:
             data = await websocket.receive_text()
             ws_message = WebSocketMessage(**json.loads(data))
-
-            message_create = MessageCreate(content=ws_message.message)
-            message = await create_message(chat_id=chat_id, sender_id=ws_message.sender_id, message=message_create, db=db)
-
+            message = await create_message(chat_id=chat_id, sender_id=ws_message.sender_id, message=MessageCreate(content=ws_message.message), db=db)
             await manager.send_message(message, chat_id)
     except WebSocketDisconnect:
         manager.disconnect(websocket, chat_id)
+        logger.info(f"WebSocket disconnected for chat_id={chat_id}")
         await websocket.close()

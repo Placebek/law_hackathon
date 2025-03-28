@@ -10,6 +10,7 @@ from jose import jwt, JWTError
 from core.config import settings
 from .send_email_police import generate_verification_code, send_verification_email
 
+
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
@@ -42,7 +43,7 @@ async def create_policeman(policeman: AdminCreatePolice, db: AsyncSession):
             last_name=policeman.last_name,
             email=policeman.email,
             phone_number=policeman.phone_number,
-            rank=policeman.rank,
+            rank_id=policeman.rank_id,
             birth_day=policeman.birth_day,
             station_id=policeman.station_id,
             is_active=False,
