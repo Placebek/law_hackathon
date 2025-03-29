@@ -211,7 +211,7 @@ class Incident(Base):
     __tablename__ = "incidents"
 
     id = Column(Integer, primary_key=True, index=True)
-    title = Column(String(255), default=True, nullable=True)
+    title = Column(String(255), default="", nullable=True)
     description = Column(Text, default="", nullable=True)
     photo = Column(Text, default="", nullable=True)
     video = Column(Text, default="", nullable=True)
