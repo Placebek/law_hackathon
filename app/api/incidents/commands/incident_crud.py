@@ -4,6 +4,8 @@ from model.model import Incident
 import logging
 from fastapi import UploadFile
 import os
+from sqlalchemy.orm import joinedload
+from typing import List
 
 
 logger = logging.getLogger(__name__)
@@ -51,3 +53,38 @@ async def create_incident(
     
     logger.info(f"Incident created with id={incident.id}")
     return incident
+
+async def get_incident_by_id(incident_id: int, db: AsyncSession) -> Incident:
+    logger.debug(f"Fetching incident with id={incident_id}")
+    query = (
+        select(Incident)
+        .where(Incident.id == incident_id)
+        .options(
+            joinedload(Incident.incident_type),  
+            joinedload(Incident.user)            
+        )
+    )
+    result = await db.execute(query)
+    incident = result.unique().scalar_one_or_none()
+    
+    if not incident:
+        logger.info(f"Incident with id={incident_id} not found")
+        raise ValueError(f"Incident with id {incident_id} not found")
+    
+    logger.info(f"Found incident with id={incident_id}")
+    return incident
+
+async def get_incidents(db: AsyncSession, user_id: int | None = None) -> List[Incident]:
+    logger.debug(f"Fetching incidents, user_id filter={user_id}")
+    query = (
+        select(Incident)
+        .options(
+            joinedload(Incident.incident_type),
+            joinedload(Incident.user)
+        )
+    )
+    result = await db.execute(query)
+    incidents = result.unique().scalars().all()
+    
+    logger.info(f"Found {len(incidents)} incidents")
+    return incidents

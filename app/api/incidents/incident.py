@@ -2,7 +2,9 @@ from fastapi import Depends, APIRouter, HTTPException, Form, UploadFile, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from database.db import get_db
 from app.api.auth.commands.context import validate_access_token_by_id, get_access_token
-from app.api.incidents.commands.incident_crud import create_incident
+from app.api.incidents.commands.incident_crud import create_incident, get_incidents, get_incident_by_id
+from typing import List
+from app.api.incidents.schemas.response import IncidentResponse
 
 
 router = APIRouter()
@@ -43,3 +45,29 @@ async def create_new_incident(
         raise HTTPException(status_code=401, detail="Invalid or expired token")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")  
+    
+@router.get(
+    "/all_incidents",
+    summary="Get list of all incidents",
+    response_model=List[IncidentResponse]
+)
+async def get_all_incidents(db: AsyncSession = Depends(get_db)):
+    try:
+        incidents = await get_incidents(db=db)
+        return incidents
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+    
+@router.get(
+    "/incident/{incident_id}",
+    summary="Get incident by ID",
+    response_model=IncidentResponse
+)
+async def get_incident(incident_id: int, db: AsyncSession = Depends(get_db)):
+    try:
+        incident = await get_incident_by_id(incident_id=incident_id, db=db)
+        return incident
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")

@@ -215,6 +215,7 @@ class Incident(Base):
     description = Column(Text, default="", nullable=True)
     photo = Column(Text, default="", nullable=True)
     video = Column(Text, default="", nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=True)
 
     incident_type_id = Column(Integer, ForeignKey("incident_types.id"), nullable=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
