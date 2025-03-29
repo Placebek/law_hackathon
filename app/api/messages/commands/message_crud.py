@@ -1,15 +1,36 @@
+from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from model.model import Chat, Message, Policeman
 from app.api.messages.schemas.response import MessageResponse
 from app.api.messages.schemas.create import MessageCreate
 import logging
+from jose import jwt, JWTError
+from datetime import datetime
+from core.config import settings
 
 logger = logging.getLogger(__name__)
 handler = logging.StreamHandler()
 handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
 logger.addHandler(handler)
 logger.setLevel(logging.DEBUG)
+
+
+
+async def validate_token(token: str, entity_type: str) -> int:
+    try:
+        payload = jwt.decode(token, settings.TOKEN_SECRET_KEY, algorithms=[settings.TOKEN_ALGORITHM])
+        entity_id = payload.get("sub")
+        if entity_id is None or payload.get("type") != entity_type:
+            raise HTTPException(status_code=401, detail=f"Invalid {entity_type} token")
+        exp = payload.get("exp")
+        if exp and exp < datetime.utcnow().timestamp():
+            raise HTTPException(status_code=401, detail="Token has expired")
+        return int(entity_id)
+    except JWTError as e:
+        raise HTTPException(status_code=401, detail=f"Invalid token: {str(e)}")
+
+
 
 async def get_or_create_chat(user_id: int, policeman_id: int, db: AsyncSession) -> int:
     """Получить или создать чат между пользователем и полицейским."""
@@ -26,6 +47,7 @@ async def get_or_create_chat(user_id: int, policeman_id: int, db: AsyncSession) 
     logger.info(f"Chat ID={chat.id} retrieved or created for user_id={user_id} and policeman_id={policeman_id}")
     return chat.id
 
+
 async def create_message(chat_id: int, sender_id: int, message: MessageCreate, db: AsyncSession) -> MessageResponse:
     """Создать сообщение в чате."""
     logger.debug(f"Creating message in chat_id={chat_id} from sender_id={sender_id}")
@@ -38,9 +60,11 @@ async def create_message(chat_id: int, sender_id: int, message: MessageCreate, d
         id=db_message.id,
         chat_id=db_message.chat_id,
         sender_id=db_message.sender_id,
+        
         content=db_message.content,
         created_at=db_message.created_at
     )
+
 
 async def get_chat_messages(chat_id: int, db: AsyncSession) -> list[MessageResponse]:
     """Получить все сообщения в чате."""
@@ -56,6 +80,9 @@ async def get_chat_messages(chat_id: int, db: AsyncSession) -> list[MessageRespo
         created_at=m.created_at
     ) for m in messages]
 
+
+
+
 async def get_active_policeman(db: AsyncSession) -> int:
     """Получить ID первого активного полицейского."""
     logger.debug("Fetching first active policeman")
@@ -67,6 +94,9 @@ async def get_active_policeman(db: AsyncSession) -> int:
         raise ValueError("No active policemen available")
     logger.debug(f"Found active policeman ID={policeman.id}")
     return policeman.id
+
+
+
 
 async def get_chat_by_policeman(policeman_id: int, db: AsyncSession) -> int:
     """Получить chat_id для полицейского."""

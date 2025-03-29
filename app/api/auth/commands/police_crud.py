@@ -65,24 +65,23 @@ async def create_policeman(policeman: AdminCreatePolice, db: AsyncSession) -> di
 
 
 async def send_police_verification_email(email_request: PoliceEmailRequest, db: AsyncSession) -> TokenResponse:
-    """Отправляет код верификации на email полицейского и возвращает токен."""
-    stmt = await db.execute(select(Policeman).filter(Policeman.email == email_request.email))
-    policeman = stmt.scalar_one_or_none()
+    result = await db.execute(select(Policeman).filter(Policeman.email == email_request.email))
+    policeman = result.scalar_one_or_none()
 
     if not policeman:
         raise HTTPException(status_code=404, detail="Policeman not found")
     
     verification_code = await generate_verification_code()
-    async with db.begin():
-        await db.execute(
-            update(Policeman)
-            .where(Policeman.email == email_request.email)
-            .values(verification_code=verification_code)
-        )
-        await db.commit()
+
+    await db.execute(
+        update(Policeman)
+        .where(Policeman.email == email_request.email)
+        .values(verification_code=verification_code)
+    )
+    await db.commit()
 
     access_token, expire_time = create_access_token(
-        data={"sub": str(policeman.id)},  
+        data={"sub": str(policeman.id)},
         entity_type="policeman"
     )
     
@@ -114,8 +113,8 @@ async def verify_police_email(token: str, code: str, db: AsyncSession) -> TokenR
     if policeman.verification_code != code:
         raise HTTPException(status_code=400, detail="Invalid verification code")
     
-    async with db.begin():
-        await db.execute(
+    
+    await db.execute(
             update(Policeman)
             .where(Policeman.id == int(policeman_id))
             .values(
@@ -123,7 +122,7 @@ async def verify_police_email(token: str, code: str, db: AsyncSession) -> TokenR
                 verification_code=None
             )
         )
-        await db.commit()
+    await db.commit()
 
     access_token, expire_time = create_access_token(
         data={"sub": str(policeman.id)},  
