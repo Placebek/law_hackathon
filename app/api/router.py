@@ -8,6 +8,8 @@ from app.api.stations.station import router as station_router
 from app.api.users.user import router as user_router
 from app.api.policemans.policeman import router as policemas_router
 from app.api.incidents.incident import router as incident_router
+from app.api.statements.statement import router as statement_router
+from app.api.news.news import router as news_router
 
 
 route = APIRouter()
@@ -21,3 +23,5 @@ route.include_router(station_router, prefix="", tags=["Station"])
 route.include_router(user_router, prefix="", tags=["User"])
 route.include_router(policemas_router,prefix="", tags=["Policeman"])
 route.include_router(incident_router, prefix="", tags=["Incident"])
+route.include_router(statement_router, prefix="", tags=["Statement"])
+route.include_router(news_router, prefix="", tags=["News"])
