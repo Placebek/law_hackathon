@@ -1,7 +1,7 @@
 import hashlib
 
 from datetime import datetime, timedelta
-from typing import Optional
+from typing import Dict, Optional,Tuple
 from jose import jwt, JWTError
 from fastapi import HTTPException, Request
 
@@ -13,10 +13,27 @@ def hash_password(plain_password: str) -> str:
 def verify_password(plain_password: str, hashed_password: str) -> str:
     return hash_password(plain_password) == hashed_password
 
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> tuple:
+def create_access_token(data: Dict[str, str], entity_type: str, expires_delta: Optional[timedelta] = None) -> Tuple[str, str]:
+    """
+    Создает JWT-токен для пользователя или полицейского.
+
+    Args:
+        data: Словарь с данными (например, {"sub": "1"}).
+        entity_type: Тип сущности ("user" или "policeman").
+        expires_delta: Время жизни токена (по умолчанию из settings).
+
+    Returns:
+        Tuple[str, str]: Токен и время истечения в формате ISO.
+    """
     to_encode = data.copy()
-    expire = datetime.utcnow() + (expires_delta or timedelta(settings.TOKEN_EXPIRE_MINUTES))
-    to_encode.update({"exp": expire})
+    if entity_type not in ["user", "policeman"]:
+        raise ValueError("entity_type must be 'user' or 'policeman'")
+    
+    to_encode["type"] = entity_type
+    
+    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES))
+    to_encode["exp"] = expire
+    
     encoded_jwt = jwt.encode(to_encode, settings.TOKEN_SECRET_KEY, algorithm=settings.TOKEN_ALGORITHM)
     return encoded_jwt, expire.isoformat()
 

@@ -26,6 +26,7 @@ class Settings(BaseSettings):
     TOKEN_ALGORITHM: str = "HS256"
     TOKEN_EXPIRE_MINUTES: int = 60 * 15  
     DATETIME_FORMAT: str = "%d-%m-%Y %H:%M:%S"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
 
     @property
     def DATABASE_URL_asyncpg(self) -> str:

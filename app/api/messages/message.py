@@ -21,7 +21,7 @@ async def validate_token(token: str, entity_type: str) -> int:
         exp = payload.get("exp")
         if exp and exp < datetime.utcnow().timestamp():
             raise HTTPException(status_code=401, detail="Token has expired")
-        return entity_id
+        return int(entity_id)  # Убедимся, что ID возвращается как int
     except JWTError as e:
         raise HTTPException(status_code=401, detail=f"Invalid token: {str(e)}")
 
@@ -64,7 +64,8 @@ async def websocket_chat(
     websocket: WebSocket,
     token: str,
     db: AsyncSession = Depends(get_db)
-):
+):  
+    print('wefwefwefwefwefwefwewewefwefwefwefwefwefwe')
     logger.info(f"WebSocket connection attempt from {websocket.client.host}")
     try:
         try:
@@ -89,23 +90,30 @@ async def websocket_chat(
             chat_id = await get_or_create_chat(user_id=user_id, policeman_id=policeman_id, db=db)
         else:
             chat_id = await get_chat_by_policeman(policeman_id=policeman_id, db=db)
+
+        await manager.connect(websocket, chat_id)
+        messages = await get_chat_messages(chat_id, db)
+        for message in messages:
+            await manager.send_message(message, chat_id)
+        
+        try:
+            while True:
+                data = await websocket.receive_text()
+                ws_message = WebSocketMessage(**json.loads(data))
+                message = await create_message(
+                    chat_id=chat_id,
+                    sender_id=ws_message.sender_id,
+                    message=MessageCreate(content=ws_message.message),
+                    db=db
+                )
+                await manager.send_message(message, chat_id)
+        except WebSocketDisconnect:
+            manager.disconnect(websocket, chat_id)
+            logger.info(f"WebSocket disconnected for chat_id={chat_id}")
+            await websocket.close()
     except Exception as e:
         logger.error(f"Authentication or chat setup failed: {str(e)}")
         await websocket.close(code=1008, reason=str(e))
-        return
 
-    await manager.connect(websocket, chat_id)
-    messages = await get_chat_messages(chat_id, db)
-    for message in messages:
-        await manager.send_message(message, chat_id)
-    
-    try:
-        while True:
-            data = await websocket.receive_text()
-            ws_message = WebSocketMessage(**json.loads(data))
-            message = await create_message(chat_id=chat_id, sender_id=ws_message.sender_id, message=MessageCreate(content=ws_message.message), db=db)
-            await manager.send_message(message, chat_id)
-    except WebSocketDisconnect:
-        manager.disconnect(websocket, chat_id)
-        logger.info(f"WebSocket disconnected for chat_id={chat_id}")
-        await websocket.close()
+
+
