@@ -102,7 +102,10 @@ async def websocket_chat(
                 "data": {
                     "content": message.content,
                     "fromUserId": str(message.sender_id),
-                    "role": message.role  # Include role in response
+                    "role": message.role  
+                    
+
+                    
                 }
             }, chat_id)
             print('event')
