@@ -1,0 +1,55 @@
+<!-- app/templates/user_call.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>User Call</title>
+</head>
+<body>
+    <h1>User Call Interface</h1>
+    <button onclick="startCall()">Call Police</button>
+    <audio id="remoteAudio" autoplay></audio>
+    <script>
+        let pc;
+        let ws;
+
+        async function startCall() {
+            pc = new RTCPeerConnection({
+                iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
+            });
+            ws = new WebSocket("ws://172.20.10.2:8000/v1/ws/call");
+
+            // Захват аудио с микрофона пользователя
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            stream.getTracks().forEach(track => pc.addTrack(track, stream));
+
+            // Обработка ICE-кандидатов
+            pc.onicecandidate = event => {
+                if (event.candidate) {
+                    ws.send(JSON.stringify({ "ice": event.candidate.toJSON() }));
+                }
+            };
+
+            // Воспроизведение аудио от полиции
+            pc.ontrack = event => {
+                const audio = document.getElementById("remoteAudio");
+                audio.srcObject = event.streams[0];
+            };
+
+            // Создание и отправка offer
+            const offer = await pc.createOffer();
+            await pc.setLocalDescription(offer);
+            ws.onopen = () => ws.send(JSON.stringify({ "sdp": pc.localDescription }));
+
+            // Обработка сообщений от сервера
+            ws.onmessage = async (event) => {
+                const data = JSON.parse(event.data);
+                if (data.sdp) {
+                    await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
+                } else if (data.ice) {
+                    await pc.addIceCandidate(new RTCIceCandidate(data.ice));
+                }
+            };
+        }
+    </script>
+</body>
+</html>

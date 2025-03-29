@@ -1,6 +1,6 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from model.model import Incident
+from model.model import Incident, IncidentType
 import logging
 from fastapi import UploadFile
 import os
@@ -88,3 +88,13 @@ async def get_incidents(db: AsyncSession, user_id: int | None = None) -> List[In
     
     logger.info(f"Found {len(incidents)} incidents")
     return incidents
+
+async def get_all_incident_types(db: AsyncSession):
+    stmt = await db.execute(select(IncidentType))
+    types = stmt.scalars().all()
+
+    if not types:
+        logger.info("Not found")
+        return []
+    logger.info(f"{len(types)}")
+    return types
