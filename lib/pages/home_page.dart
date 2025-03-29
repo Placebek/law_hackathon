@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart'; // Добавляем для SchedulerBinding
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../services/api/case_service.dart';
@@ -26,8 +27,23 @@ class _HomePageState extends State<HomePage>
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-    _loadData();
-    _setupWebSocketListeners();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    if (_isLoading && authProvider.token != null) {
+      _loadData();
+      _setupWebSocketListeners();
+    } else if (authProvider.token == null) {
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        Navigator.pushReplacementNamed(context, '/login');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Пожалуйста, войдите в систему')),
+        );
+      });
+    }
   }
 
   Future<void> _loadData() async {
@@ -44,17 +60,26 @@ class _HomePageState extends State<HomePage>
     }
   }
 
-  void _processMessages(List<Map<String, dynamic>> messages) {
+  void _processMessages(
+    List<Map<String, dynamic>> messages,
+    AuthProvider authProvider,
+  ) {
     _messagesBySender.clear();
     for (var message in messages) {
-      final senderId = message['sender_id'].toString();
-      if (!_messagesBySender.containsKey(senderId)) {
-        _messagesBySender[senderId] = [];
+      final senderId =
+          message['sender_id']?.toString() ?? message['fromUserId']?.toString();
+      if (senderId != null) {
+        if (!_messagesBySender.containsKey(senderId)) {
+          _messagesBySender[senderId] = [];
+        }
+        _messagesBySender[senderId]!.add({
+          'content': message['content'],
+          'is_user':
+              message['is_user'] ??
+              (message['fromUserId'] == authProvider.username),
+          'chat_id': message['chat_id'],
+        });
       }
-      _messagesBySender[senderId]!.add({
-        'content': message['content'],
-        'is_user': message['from_user'],
-      });
     }
   }
 
@@ -63,27 +88,56 @@ class _HomePageState extends State<HomePage>
     if (authProvider.policeWebSocketService != null) {
       authProvider.policeWebSocketService!.onAllMessages((messages) {
         setState(() {
-          _processMessages(messages);
+          _processMessages(messages, authProvider);
         });
+      });
+      authProvider.policeWebSocketService!.onNewMessage((data) {
+        final senderId =
+            data['fromUserId']?.toString() ?? data['sender_id']?.toString();
+        if (senderId != null) {
+          setState(() {
+            if (!_messagesBySender.containsKey(senderId)) {
+              _messagesBySender[senderId] = [];
+            }
+            _messagesBySender[senderId]!.add({
+              'content': data['content'],
+              'is_user':
+                  data['is_user'] ??
+                  (data['fromUserId'] == authProvider.username),
+              'chat_id': data['chat_id'],
+            });
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Новое сообщение от $senderId: ${data['content']}'),
+            ),
+          );
+        }
       });
     }
     if (authProvider.chatWebSocketService != null) {
       authProvider.chatWebSocketService!.onNewMessage((data) {
-        final senderId = data['fromUserId'].toString();
-        setState(() {
-          if (!_messagesBySender.containsKey(senderId)) {
-            _messagesBySender[senderId] = [];
-          }
-          _messagesBySender[senderId]!.add({
-            'content': data['content'],
-            'is_user': data['is_user'],
+        final senderId =
+            data['fromUserId']?.toString() ?? data['sender_id']?.toString();
+        if (senderId != null) {
+          setState(() {
+            if (!_messagesBySender.containsKey(senderId)) {
+              _messagesBySender[senderId] = [];
+            }
+            _messagesBySender[senderId]!.add({
+              'content': data['content'],
+              'is_user':
+                  data['is_user'] ??
+                  (data['fromUserId'] == authProvider.username),
+              'chat_id': data['chat_id'],
+            });
           });
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Новое сообщение от $senderId: ${data['content']}'),
-          ),
-        );
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Новое сообщение от $senderId: ${data['content']}'),
+            ),
+          );
+        }
       });
       authProvider.chatWebSocketService!.onIncomingCall((data) async {
         await _audioPlayer.setAsset('assets/ringtone.mp3');
@@ -177,8 +231,7 @@ class _HomePageState extends State<HomePage>
       itemBuilder: (context, index) {
         final senderId = _messagesBySender.keys.elementAt(index);
         final lastMessage = _messagesBySender[senderId]!.last;
-        final chatId =
-            lastMessage['chat_id'] ?? 1; // Используем 1 по умолчанию для теста
+        final chatId = lastMessage['chat_id'] ?? 1;
         print('Переход в чат с senderId=$senderId, chatId=$chatId');
         return Card(
           margin: EdgeInsets.symmetric(vertical: 5, horizontal: 10),

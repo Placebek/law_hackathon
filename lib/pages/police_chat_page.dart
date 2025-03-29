@@ -19,34 +19,17 @@ class _PoliceChatPageState extends State<PoliceChatPage> {
   bool _isWebSocketSetup = false;
 
   @override
-  void initState() {
-    super.initState();
-    _loadChatMessages();
-  }
-
-  void _loadChatMessages() {
+  void didChangeDependencies() {
+    super.didChangeDependencies();
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    if (authProvider.token != null) {
-      print(
-        'Инициализация ChatMessagesWebSocketService для chat_id=${widget.chatId}',
-      );
-      authProvider.initializeChatMessagesWebSocket(
+    if (!_isWebSocketSetup && authProvider.token != null) {
+      authProvider.initializeChatById(
         authProvider.token!,
-        widget.chatId,
+        widget.chatId.toString(),
       );
-      if (authProvider.chatMessagesWebSocketService != null) {
-        authProvider.chatMessagesWebSocketService!.onChatMessages((messages) {
-          print('Получены сообщения чата: $messages');
-          setState(() {
-            _messages = messages;
-            _scrollToBottom();
-          });
-        });
-      } else {
-        print('Ошибка: chatMessagesWebSocketService не инициализирован');
-      }
-    } else {
-      print('Ошибка: токен отсутствует');
+      _isWebSocketSetup = true;
+      _messages = authProvider.messagesByChatId[widget.chatId.toString()] ?? [];
+      _scrollToBottom();
     }
   }
 
@@ -54,11 +37,8 @@ class _PoliceChatPageState extends State<PoliceChatPage> {
   Widget build(BuildContext context) {
     return Consumer<AuthProvider>(
       builder: (context, authProvider, child) {
-        if (!_isWebSocketSetup && authProvider.chatWebSocketService != null) {
-          _setupWebSocketListeners(authProvider);
-          _isWebSocketSetup = true;
-        }
-
+        _messages =
+            authProvider.messagesByChatId[widget.chatId.toString()] ?? [];
         return Scaffold(
           appBar: AppBar(
             title: Text(
@@ -79,10 +59,11 @@ class _PoliceChatPageState extends State<PoliceChatPage> {
                           itemCount: _messages.length,
                           itemBuilder: (context, index) {
                             final message = _messages[index];
-                            final isPoliceman = !(message['is_user'] ?? false);
+                            final isFromCurrentUser =
+                                message['is_from_current_user'] ?? false;
                             return Align(
                               alignment:
-                                  isPoliceman
+                                  isFromCurrentUser
                                       ? Alignment.centerRight
                                       : Alignment.centerLeft,
                               child: Container(
@@ -97,17 +78,17 @@ class _PoliceChatPageState extends State<PoliceChatPage> {
                                 ),
                                 decoration: BoxDecoration(
                                   color:
-                                      isPoliceman
+                                      isFromCurrentUser
                                           ? Color(0xFF1E88E5)
                                           : Colors.grey[300],
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                                 child: Text(
-                                  message['content'],
+                                  message['content'] ?? 'Сообщение отсутствует',
                                   style: TextStyle(
                                     fontSize: 16,
                                     color:
-                                        isPoliceman
+                                        isFromCurrentUser
                                             ? Colors.white
                                             : Colors.black87,
                                   ),
@@ -153,48 +134,14 @@ class _PoliceChatPageState extends State<PoliceChatPage> {
     );
   }
 
-  void _setupWebSocketListeners(AuthProvider authProvider) {
-    if (authProvider.chatWebSocketService != null) {
-      authProvider.chatWebSocketService!.onNewMessage((data) {
-        if (data['fromUserId'] == widget.senderId) {
-          print('Новое сообщение в реальном времени: ${data['content']}');
-          setState(() {
-            _messages.add({
-              'content': data['content'],
-              'is_user': data['is_user'],
-            });
-            _scrollToBottom();
-          });
-        }
-      });
-      authProvider.chatWebSocketService!.onIncomingCall((data) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Входящий звонок от ${data['fromUserId']}')),
-        );
-      });
-      authProvider.chatWebSocketService!.authenticate(authProvider.username!);
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Чат недоступен: WebSocket не инициализирован')),
-      );
-    }
-  }
-
   void _sendMessage(AuthProvider authProvider) {
     final message = _messageController.text.trim();
-    if (message.isNotEmpty &&
-        authProvider.chatWebSocketService != null &&
-        authProvider.username != null) {
-      authProvider.chatWebSocketService!.sendMessage(widget.senderId, message);
-      setState(() {
-        _messages.add({'content': message, 'is_user': false});
-      });
+    if (message.isNotEmpty && authProvider.chatWebSocketServiceById != null) {
+      authProvider.chatWebSocketServiceById!.sendMessage(
+        '{"message": "$message"}',
+      );
       _messageController.clear();
       _scrollToBottom();
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Чат недоступен: WebSocket не инициализирован')),
-      );
     }
   }
 
@@ -214,10 +161,6 @@ class _PoliceChatPageState extends State<PoliceChatPage> {
   void dispose() {
     _messageController.dispose();
     _scrollController.dispose();
-    Provider.of<AuthProvider>(
-      context,
-      listen: false,
-    ).chatMessagesWebSocketService?.disconnect();
     super.dispose();
   }
 }
