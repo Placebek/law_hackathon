@@ -48,22 +48,28 @@ async def get_access_token(request: Request) -> str:
     
     return parts[1]
 
-async def validate_access_token(access_token: str) -> str:
-    payload = jwt.decode(
+async def validate_access_token(access_token: str, expected_type: str = None) -> str:
+    try:
+        payload = jwt.decode(
             access_token,
             settings.TOKEN_SECRET_KEY,
             algorithms=[settings.TOKEN_ALGORITHM]
         )
+        tg_username = payload.get("sub")
+        if tg_username is None:
+            raise HTTPException(status_code=401, detail="Invalid token")
         
-    tg_username = payload.get("sub") 
-    if tg_username is None:
-        raise HTTPException(status_code=401, detail="Invalid token")
-    
-    exp = payload.get("exp")
-    if exp and exp < datetime.utcnow().timestamp():
-        raise HTTPException(status_code=401, detail="Token has expired")
-    
-    return tg_username
+        token_type = payload.get("type")
+        if expected_type and token_type != expected_type:
+            raise HTTPException(status_code=401, detail=f"Token type must be '{expected_type}'")
+        
+        exp = payload.get("exp")
+        if exp and exp < datetime.utcnow().timestamp():
+            raise HTTPException(status_code=401, detail="Token has expired")
+        
+        return tg_username
+    except JWTError as e:
+        raise HTTPException(status_code=401, detail=f"Invalid token: {str(e)}")
 
 
 async def validate_access_token_by_id(access_token: str) -> str:
