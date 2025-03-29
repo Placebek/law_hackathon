@@ -16,7 +16,7 @@
         </div>
       </div>
 
-      <div class="p-8 pt-16 h-[550px]">
+      <div class="p-8 pt-12 h-[550px]">
         <div class="flex justify-center items-center gap-4">
           <div class="w-2/3 h-full rounded-[25px]">
             <StatisticFrame
@@ -31,7 +31,7 @@
         </div>
       </div>
 
-      <div class="p-8">
+      <div class="pl-8 pr-8">
         <div class="bg-white rounded-[25px] flex items-start justify-start p-4 text-[#6388A8]">
           <div class="p-5 flex flex-col items-start space-y-2">
             <span class="text-2xl">Октябрьский отдел полиции УП г. Караганды </span>  
