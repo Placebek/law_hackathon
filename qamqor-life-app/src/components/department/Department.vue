@@ -2,7 +2,7 @@
   <div class="bg-custom-gradient h-full flex justify-start">
     <Navbar />
     <div class="w-full h-full pt-8 pl-8 pr-8">
-      <div class="w-full bg-white rounded-t-[25px] p-8 text-black ">
+      <div class="w-full bg-white h-full rounded-t-[25px] p-8 text-black ">
         <div 
           @click="goBack"
           class="text-[#6388A8] text-[18px] pl-5 cursor-pointer flex items-center gap-2 hover:underline"
@@ -13,12 +13,36 @@
           Назад
         </div>
 
-        <div class="p-5 flex flex-col items-start space-y-2">
+        <!-- <div class="p-5 flex flex-col items-start space-y-2">
           <span class="text-3xl">Октябрьский отдел полиции УП г. Караганды</span>
           <span class="text-sm">Архитектурная улица, 1 Майкудук м-н, Алихана Бокейхана район, Караганда, Караганда городская администрация, 100001</span>
+        </div> -->
+        <div v-if="department" class="p-5 flex flex-col items-start space-y-2">
+          <span class="text-3xl">{{ department.station_name }}</span>
+          <span class="text-sm">{{ department.geolocation.city }} / {{ department.geolocation.street }}</span>
+        </div>
+
+
+        <div v-if="department" v-for="(policeman, index) in department.policemans" :key="index"> 
+          <div class="mt-8 text-black">
+            <div class="rounded-[25px] flex items-start justify-start p-6 shadow-lg gap-4" style="box-shadow: 0 4px 10px #6388A8">
+              <div class="w-[200px] flex-shrink-0">
+                <img src="https://photogov-com.akamaized.net/examples/original/US.webp" class="w-[200px] h-64 rounded-[25px] object-cover" />
+              </div>
+              <div class="p-5 flex flex-col items-start space-y-2">
+                <span class="text-2xl">{{ policeman.first_name, policeman.last_name }}</span>
+                <span class="text-sm">{{ policeman.rank.name }}</span>
+                <div class="pt-5">
+                  <p class="text-[15px]">
+                    {{ policeman.resume }}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
         
-        <div>
+        <!-- <div>
           <div class="mt-8 text-black">
             <div class="rounded-[25px] flex items-start justify-start p-6 shadow-lg gap-4" style="box-shadow: 0 4px 10px #6388A8">
               <div class="w-[200px] flex-shrink-0">
@@ -67,10 +91,10 @@
                   </p>
                 </div>
               </div>
-            </div>
-          </div>
+            </div> -->
+          <!-- </div> -->
 
-        </div>
+        <!-- </div> -->
         
       </div>
     </div>
@@ -78,23 +102,53 @@
 </template>
 
 <script>
-import { useRouter } from 'vue-router';
+import { ref, onMounted } from "vue";
+import { useRoute, useRouter } from 'vue-router';
 import Navbar from "../menu/Navbar.vue";
+import { useDepartmentStore } from '../../stores/department'
+
 
 export default {
   name: "Department",
   components: {
     Navbar,
   },
+  props: {
+    departmentId: {
+      type: String,
+      required: true,
+    },
+  },
   setup() {
+    const route = useRoute();
     const router = useRouter();
 
     const goBack = () => {
       router.back();
     };
 
+    const departmentId = route.params.id;
+
+    const department = ref(null);
+
+    const getDepartment = async () => {
+        try {
+            const departmentStore = useDepartmentStore();
+            const department_result = await departmentStore.getDepartmentByID(departmentId);
+            department.value = department_result;
+        } catch (err) {
+            console.error("Ошибка при получении продуктов:", err);
+            this.error = "Не удалось загрузить продукты";
+        }
+    };
+
+    onMounted(() => {
+      getDepartment()
+    });
+
     return {
       goBack,
+      department
     };
   },
 };

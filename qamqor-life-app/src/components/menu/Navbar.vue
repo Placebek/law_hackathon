@@ -1,15 +1,14 @@
 <template>
-  <div class="w-[300px]">
-    <div class="bg-[#6388A8] h-full text-white p-8">
+  <div class="bg-[#6388A8] text-white p-8">
       <div class="text-[30px] mb-16">Qamqor Life</div>
-      
+
       <div class="flex flex-col gap-6">
         <div class="">
           <button
             @click="openModal"
             class="bg-white text-[#6388A8] cursor-pointer px-4 py-3 rounded-[25px] transition-all duration-200 ease-in-out"
           >
-            Добавить нового рабочего
+            Добавить нового сотрудника
           </button>
 
           <div
@@ -35,7 +34,6 @@
           {{ item.label }}
         </div>
       </div>
-    </div>
   </div>
 </template>
 
@@ -47,10 +45,10 @@ import Add from '../add/Add.vue';
 const router = useRouter();
 
 const menuItems = [
-  { name: 'home', label: 'Home', path: '/home' },
-  { name: 'statistic', label: 'Statistic' },
-  { name: 'about', label: 'About' },
-  { name: 'settings', label: 'Settings' },
+  { name: 'home', label: 'Главное окно', path: '/home' },
+  { name: 'statistic', label: 'Статистика' },
+  { name: 'about', label: 'О нас' },
+  { name: 'settings', label: 'Настройки' },
 ];
 
 
