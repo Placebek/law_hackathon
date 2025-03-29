@@ -12,7 +12,7 @@ from jose import jwt, JWTError
 from datetime import datetime
 from core.config import settings
 
-async def validate_token(token: str, entity_type: str) -> int:
+async def validate_token(token: str, entity_type: str) -> tuple[int, str]:
     try:
         payload = jwt.decode(token, settings.TOKEN_SECRET_KEY, algorithms=[settings.TOKEN_ALGORITHM])
         entity_id = payload.get("sub")
@@ -21,7 +21,8 @@ async def validate_token(token: str, entity_type: str) -> int:
         exp = payload.get("exp")
         if exp and exp < datetime.utcnow().timestamp():
             raise HTTPException(status_code=401, detail="Token has expired")
-        return int(entity_id)
+        role = "user" if entity_type == "user" else "police"
+        return int(entity_id), role
     except JWTError as e:
         raise HTTPException(status_code=401, detail=f"Invalid token: {str(e)}")
 
@@ -67,45 +68,45 @@ async def websocket_chat(
 ):  
     logger.info(f"WebSocket connection attempt from {websocket.client.host}")
     try:
+        # Validate token and get entity_id and role
         try:
-            sender_id = await validate_token(token, "user")
-            entity_type = "user"
+            sender_id, role = await validate_token(token, "user")
             entity_query = select(User).where(User.id == sender_id)
             policeman_id = None
         except HTTPException:
-            sender_id = await validate_token(token, "policeman")
-            entity_type = "policeman"
+            sender_id, role = await validate_token(token, "policeman")
             entity_query = select(Policeman).where(Policeman.id == sender_id)
             policeman_id = sender_id
 
         result = await db.execute(entity_query)
         entity = result.scalar_one_or_none()
         if not entity:
-            raise ValueError(f"{entity_type.capitalize()} not found")
-        logger.info(f"{entity_type.capitalize()} authenticated: ID={sender_id}")
+            raise ValueError(f"{role.capitalize()} not found")
+        logger.info(f"{role.capitalize()} authenticated: ID={sender_id}")
 
-        if entity_type == "user":
+        if role == "user":
             policeman_id = await get_active_policeman(db)
             chat_id = await get_or_create_chat(user_id=sender_id, policeman_id=policeman_id, db=db)
-        else:
+        else:  # role == "police"
             chat_id = await get_chat_by_policeman(policeman_id=policeman_id, db=db)
             if chat_id is None:
                 await websocket.close(code=1008, reason="No active chat for policeman")
                 return
 
         await manager.connect(websocket, chat_id)
+        print('event')
         messages = await get_chat_messages(chat_id, db)
         for message in messages:
             await manager.send_message({
                 "event": "new_message",
                 "data": {
                     "content": message.content,
-                    "is_user": message.sender_id == sender_id if entity_type == "user" else False,
-                    "fromUserId": str(message.sender_id)
+                    "fromUserId": str(message.sender_id),
+                    "role": message.role  # Include role in response
                 }
             }, chat_id)
+            print('event')
         
-        try:
             while True:
                 data = await websocket.receive_text()
                 logger.debug(f"Raw received data: {data}")
@@ -113,12 +114,11 @@ async def websocket_chat(
                 logger.debug(f"Parsed message: {ws_message}")
 
                 event = ws_message.get("event")
+
                 if event:
                     event_data = ws_message.get("data", {})
                     if event == "auth":
-                        logger.debug(f"Received auth event: {event_data}")
                         await manager.send_message({"event": "auth_success", "data": {"id": sender_id}}, chat_id)
-
                     elif event == "call":
                         to_user_id = int(event_data["toUserId"])
                         from_user_id = int(event_data["fromUserId"])
@@ -128,25 +128,24 @@ async def websocket_chat(
                             "event": "incoming_call",
                             "data": {"toUserId": to_user_id, "fromUserId": from_user_id}
                         }, chat_id)
-
                     elif event == "message":
+                        print('event_data', event_data) 
                         to_user_id = int(event_data["toUserId"])
                         text = event_data["text"]
                         message = await create_message(
                             chat_id=chat_id,
                             sender_id=sender_id,
-                            message=MessageCreate(content=text),
+                            message=MessageCreate(content=text, role=role),  # Pass role
                             db=db
                         )
                         await manager.send_message({
                             "event": "new_message",
                             "data": {
                                 "content": message.content,
-                                "is_user": entity_type == "user",
-                                "fromUserId": str(sender_id)
+                                "fromUserId": str(sender_id),
+                                "role": message.role  # Include role
                             }
                         }, chat_id)
-
                     else:
                         logger.warning(f"Unknown event: {event}")
                 else:
@@ -155,24 +154,35 @@ async def websocket_chat(
                         message = await create_message(
                             chat_id=chat_id,
                             sender_id=sender_id,
-                            message=MessageCreate(content=text),
+                            message=MessageCreate(content=text, role=role),  # Pass role
                             db=db
                         )
                         await manager.send_message({
                             "event": "new_message",
                             "data": {
                                 "content": message.content,
-                                "is_user": entity_type == "user",
-                                "fromUserId": str(sender_id)
+                                "fromUserId": str(sender_id),
+                                "role": message.role  # Include role
                             }
                         }, chat_id)
                     else:
                         logger.warning(f"Received message with no recognizable format: {ws_message}")
 
-        except WebSocketDisconnect:
-            manager.disconnect(websocket, chat_id)
-            logger.info(f"WebSocket disconnected for chat_id={chat_id}")
-            await websocket.close()
+        await manager.send_message({
+            "event": "chat_messages",
+            "data": [
+                {
+                    "id": message.id,
+                    "chat_id": message.chat_id,
+                    "sender_id": str(message.sender_id),
+                    "content": message.content,
+                    "created_at": message.created_at.isoformat(),
+                    "role": message.role  # Include role
+                }
+                for message in messages
+            ]
+        }, chat_id)
+       
     except Exception as e:
         logger.error(f"Authentication or chat setup failed: {str(e)}")
         await websocket.close(code=1008, reason=str(e))
@@ -220,13 +230,11 @@ async def get_all_police_chats(
                     "from_user": message.sender_id != policeman_id  # True, если от жителя
                 })
 
-        # Отправляем все сообщения клиенту
         await websocket.send_text(json.dumps({"event": "all_messages", "data": all_messages}))
 
-        # Поддерживаем соединение открытым (если нужно)
         try:
             while True:
-                await websocket.receive_text()  # Ожидаем входящие сообщения, если нужно
+                await websocket.receive_text()  
         except WebSocketDisconnect:
             logger.info(f"WebSocket disconnected for policeman_id={policeman_id}")
             await websocket.close(code=1000)
@@ -246,23 +254,19 @@ async def websocket_chat_messages(
 ):
     await websocket.accept()
     try:
-       
         try:
-            sender_id = await validate_token(token, "user")
-            entity_type = "user"
+            sender_id, role = await validate_token(token, "user")
             entity_query = select(User).where(User.id == sender_id)
         except HTTPException:
-            sender_id = await validate_token(token, "policeman")
-            entity_type = "policeman"
+            sender_id, role = await validate_token(token, "policeman")
             entity_query = select(Policeman).where(Policeman.id == sender_id)
 
         result = await db.execute(entity_query)
         entity = result.scalar_one_or_none()
         if not entity:
-            raise HTTPException(status_code=401, detail=f"{entity_type.capitalize()} not found")
-        logger.info(f"{entity_type.capitalize()} authenticated: ID={sender_id}")
+            raise HTTPException(status_code=401, detail=f"{role.capitalize()} not found")
+        logger.info(f"{role.capitalize()} authenticated: ID={sender_id}")
 
-        # Проверяем, имеет ли пользователь доступ к этому чату
         chat_query = select(Chat).where(Chat.id == chat_id)
         result = await db.execute(chat_query)
         chat = result.scalar_one_or_none()
@@ -271,16 +275,15 @@ async def websocket_chat_messages(
             await websocket.close(code=1008, reason="Chat not found")
             return
 
-        if entity_type == "user" and chat.user_id != sender_id:
+        if role == "user" and chat.user_id != sender_id:
             await websocket.send_text(json.dumps({"error": "Access denied"}))
             await websocket.close(code=1008, reason="Access denied")
             return
-        if entity_type == "policeman" and chat.policeman_id != sender_id:
+        if role == "police" and chat.policeman_id != sender_id:
             await websocket.send_text(json.dumps({"error": "Access denied"}))
             await websocket.close(code=1008, reason="Access denied")
             return
 
-        # Получаем все сообщения чата
         messages = await get_chat_messages(chat_id, db)
         message_list = [
             {
@@ -289,18 +292,16 @@ async def websocket_chat_messages(
                 "sender_id": str(message.sender_id),
                 "content": message.content,
                 "created_at": message.created_at.isoformat(),
-                "is_user": message.sender_id == chat.user_id
+                "role": message.role  # Include role
             }
             for message in messages
         ]
 
-        # Отправляем все сообщения клиенту
         await websocket.send_text(json.dumps({"event": "chat_messages", "data": message_list}))
 
-        # Поддерживаем соединение открытым для возможных дополнительных запросов
         try:
             while True:
-                await websocket.receive_text()  # Ожидаем входящие сообщения, если нужно
+                await websocket.receive_text()
         except WebSocketDisconnect:
             logger.info(f"WebSocket disconnected for chat_id={chat_id}")
             await websocket.close(code=1000)

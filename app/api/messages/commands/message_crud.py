@@ -60,7 +60,7 @@ async def create_message(chat_id: int, sender_id: int, message: MessageCreate, d
         id=db_message.id,
         chat_id=db_message.chat_id,
         sender_id=db_message.sender_id,
-        
+        role=db_message.role,
         content=db_message.content,
         created_at=db_message.created_at
     )
@@ -77,6 +77,7 @@ async def get_chat_messages(chat_id: int, db: AsyncSession) -> list[MessageRespo
         chat_id=m.chat_id,
         sender_id=m.sender_id,
         content=m.content,
+        role=m.role,
         created_at=m.created_at
     ) for m in messages]
 
