@@ -1,15 +1,15 @@
 <template>
   <div class="bg-white p-8 rounded-2xl shadow-xl w-[70%] max-w-3xl mx-auto text-[#277D74]"
        style="height: 90vh; overflow-y: auto; position: relative;">
-
     <h2 class="text-2xl font-bold text-center mb-6">
       Добавить нового полицейского
     </h2>
 
+    <!-- Форма с обработчиком submit -->
     <form @submit.prevent="submitForm" class="space-y-4">
       <div class="grid grid-cols-12">
         <div class="col-span-9 grid grid-rows-3 gap-4 pe-4">
-          <div class="">
+          <div>
             <label class="block text-[#15524C] mb-1">Имя</label>
             <input
               v-model="formData.firstName"
@@ -52,11 +52,7 @@
             <input id="fileInput" type="file" @change="handleFileUpload" class="hidden" />
           </template>
         </div>
-
-      
       </div>
-
-
 
       <div class="grid grid-cols-2 gap-4">
         <div>
@@ -144,6 +140,7 @@
 
 <script setup>
 import { ref } from 'vue'
+import { usePolicemanStore } from '../../stores/policeman'
 
 const emit = defineEmits(['close', 'submit'])
 
@@ -174,10 +171,29 @@ function handleFileUpload(event) {
 function closeModal() {
   emit('close')
 }
+async function submitForm() {
+  const payload = {
+    first_name: formData.value.firstName,
+    last_name: formData.value.lastName,
+    email: formData.value.email,
+    phone_number: formData.value.phone,
+    rank_name: formData.value.rank, 
+    birth_day: formData.value.birthDate, 
+    station_name: formData.value.station,
+    resume: formData.value.resume
+  };
 
-function submitForm() {
-  console.log('Данные нового сотрудника:', formData.value)
-  emit('submit', formData.value)
-  closeModal()
+  try {
+    const policemanStore = usePolicemanStore();
+    debugger
+    const result = await policemanStore.createPoliceman(payload);
+    debugger
+    console.log('Новый полицейский успешно создан:', result);
+    emit('submit', payload);
+    closeModal();
+  } catch (error) {
+    console.error("Ошибка при создании полицейского:", error);
+  }
 }
+
 </script>

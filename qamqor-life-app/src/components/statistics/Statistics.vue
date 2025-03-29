@@ -41,16 +41,30 @@
           :key="index"
           @click="goToStatementProfile(statement)"
           class="pt-10 mx-24"
-          > 
+        > 
           <div class="grid grid-cols-6 gap-6">
             <div class="w-[70px] h-[30px] bg-[#6388A8] rounded-[5px]"></div>
-            <div>{{ statement.first_name }}  {{ statement.last_name }}</div>
+
+            <div v-if="statement.user?.first_name && statement.user?.last_name">
+              {{ statement.user.first_name }} {{ statement.user.last_name }}
+            </div>
+            <div v-else>
+              Неизвестно
+            </div>
+
             <div>{{ statement.recipient }}</div>
             <div>{{ new Date(statement.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) }}</div>
-            <div>{{ statement.type.type_name }}</div>
-            <div>{{ statement.policeman.first_name }} {{ statement.policeman.last_name }}</div>
+            <div>{{ statement.type?.type_name }}</div>
+
+            <div v-if="statement.policeman && statement.policeman.first_name">
+              {{ statement.policeman.first_name }} {{ statement.policeman.last_name }}
+            </div>
+            <div v-else>
+              Неизвестно
+            </div>
           </div>
         </div>
+
 
       </div>
 

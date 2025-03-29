@@ -21,7 +21,7 @@
               <h2 class="text-2xl font-bold ">{{ policeman.first_name }} {{ policeman.last_name }}</h2>
               <p class="text-lg">{{ policeman.rank.name }}</p>
               <p class="text-base mt-4">
-                <span class="font-semibold">Отдел полиции:</span>{{ policeman.station.station_name }}<br>
+                <span class="font-semibold">Отдел полиции:</span> {{ policeman.station.station_name }}<br>
                 <span class="font-semibold">Стаж:</span> 20 лет<br>
                 <span class="font-semibold">Год рождения: </span>{{ policeman.birth_day }}<br>
                 <span class="font-semibold">Область ответственности:</span> обеспечение общественной безопасности, расследование преступлений, контроль оперативных мероприятий<br>
@@ -88,9 +88,9 @@ export default {
             const dateStr = policeman_result.birth_day;
             const dateObj = new Date(dateStr);
 
-            const day = ("0" + dateObj.getDate()).slice(-2); // "28"
-            const month = ("0" + (dateObj.getMonth() + 1)).slice(-2); // "03" (месяцы с 0, поэтому +1)
-            const year = dateObj.getFullYear(); // 2025
+            const day = ("0" + dateObj.getDate()).slice(-2);
+            const month = ("0" + (dateObj.getMonth() + 1)).slice(-2);
+            const year = dateObj.getFullYear();
 
             policeman_result.birth_day = `${day}.${month}.${year}`;
 
