@@ -4,6 +4,7 @@ from datetime import datetime
 
 
 class IncidentTypeResponse(BaseModel):
+    id: int
     type_name: str
 
     class Config:

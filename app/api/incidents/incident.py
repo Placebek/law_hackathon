@@ -2,9 +2,9 @@ from fastapi import Depends, APIRouter, HTTPException, Form, UploadFile, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from database.db import get_db
 from app.api.auth.commands.context import validate_access_token_by_id, get_access_token
-from app.api.incidents.commands.incident_crud import create_incident, get_incidents, get_incident_by_id
+from app.api.incidents.commands.incident_crud import create_incident, get_incidents, get_incident_by_id, get_all_incident_types
 from typing import List
-from app.api.incidents.schemas.response import IncidentResponse
+from app.api.incidents.schemas.response import IncidentResponse, IncidentTypeResponse
 
 
 router = APIRouter()
@@ -71,3 +71,11 @@ async def get_incident(incident_id: int, db: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+    
+@router.get(
+    "/incident_types/all",
+    summary="Get all incident types",
+    response_model=List[IncidentTypeResponse]
+)
+async def read_all_incident_types(db: AsyncSession = Depends(get_db)):
+    return await get_all_incident_types(db=db)
