@@ -10,17 +10,18 @@ class AuthProvider with ChangeNotifier {
   String? _username;
   String? _verificationToken;
   String? _tokenExpireTime;
+  String? _role;
   final AuthService _authService = AuthService();
   ChatWebSocketService? _chatWebSocketService;
   ChatMessagesWebSocketService? _chatWebSocketServiceById;
   PoliceWebSocketService? _policeWebSocketService;
-  // Добавляем хранилище сообщений по chatId
   Map<String, List<Map<String, dynamic>>> _messagesByChatId = {};
   List<Map<String, dynamic>> _allMessages = [];
 
   bool get isAuthenticated => _token != null;
   String? get username => _username;
   String? get token => _token;
+  String? get role => _role;
   ChatWebSocketService? get chatWebSocketService => _chatWebSocketService;
   PoliceWebSocketService? get policeWebSocketService => _policeWebSocketService;
   ChatMessagesWebSocketService? get chatWebSocketServiceById =>
@@ -38,6 +39,7 @@ class AuthProvider with ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     _token = prefs.getString('access_token');
     _username = prefs.getString('username');
+    _role = prefs.getString('role');
     _tokenExpireTime = prefs.getString('access_token_expire_time');
     if (_token != null) {
       _initializeWebSocket(_token!);
@@ -71,7 +73,9 @@ class AuthProvider with ChangeNotifier {
     _tokenExpireTime = response['access_token_expire_time'];
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('access_token', _token!);
+    _role = response['role'] ?? 'policeman';
     await prefs.setString('username', _username!);
+    await prefs.setString('role', _role!);
     await prefs.setString('access_token_expire_time', _tokenExpireTime!);
     _initializeWebSocket(_token!);
     _verificationToken = null;
@@ -102,6 +106,7 @@ class AuthProvider with ChangeNotifier {
   Future<void> logout() async {
     _token = null;
     _username = null;
+    _role = null;
     _verificationToken = null;
     _tokenExpireTime = null;
     _messagesByChatId.clear();
@@ -109,6 +114,7 @@ class AuthProvider with ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('access_token');
     await prefs.remove('username');
+    await prefs.remove('role');
     await prefs.remove('access_token_expire_time');
     _chatWebSocketService?.disconnect();
     _chatWebSocketServiceById?.disconnect();
@@ -121,15 +127,16 @@ class AuthProvider with ChangeNotifier {
     _chatWebSocketService = ChatWebSocketService(token);
     print('ChatWebSocketService инициализирован с токеном: $token');
     _setupChatWebSocketListeners();
+    _setupWebSocketListeners();
   }
 
   // Добавляем метод initializeChatById
   void initializeChatById(String token, String chatId) {
+    print('ChatWebSocketServiceById инициализирован для chatId: $chatId');
     _chatWebSocketServiceById = ChatMessagesWebSocketService(
       token,
       int.parse(chatId),
     );
-    print('ChatWebSocketServiceById инициализирован для chatId: $chatId');
     _setupChatByIdWebSocketListeners(chatId);
   }
 
@@ -144,16 +151,47 @@ class AuthProvider with ChangeNotifier {
 
   void _setupChatByIdWebSocketListeners(String chatId) {
     if (_chatWebSocketServiceById != null) {
+      _chatWebSocketServiceById!.onChatMessages((messages) {
+        print('Все сообщения для chatId $chatId: $messages');
+        _messagesByChatId[chatId] =
+            messages.map((msg) {
+              final senderId =
+                  msg['sender_id']?.toString() ?? msg['fromUserId']?.toString();
+              return {
+                'content': msg['content'],
+                'sender_id': senderId,
+                'role': msg['role'],
+                'chat_id': chatId,
+              };
+            }).toList();
+        notifyListeners();
+      });
       _chatWebSocketServiceById!.onNewMessage((data) {
         print('Новое сообщение для chatId $chatId: $data');
         _addMessage(data, chatId: chatId);
       });
-      // Запрашиваем сообщения для конкретного chatId
       _chatWebSocketServiceById!.sendMessage('{"event": "get_chat_messages"}');
     }
   }
 
+  void sendChatMessage(String message, String chatId) {
+    if (_chatWebSocketServiceById != null) {
+      _chatWebSocketServiceById!.sendMessage(message);
+      if (!_messagesByChatId.containsKey(chatId)) {
+        _messagesByChatId[chatId] = [];
+      }
+      _messagesByChatId[chatId]!.add({
+        'content': message,
+        'sender_id': _username,
+        'role': 'police',
+        'chat_id': chatId,
+      });
+      notifyListeners();
+    }
+  }
+
   void _addMessage(Map<String, dynamic> data, {String? chatId}) {
+    print('wefweewfwfwewewef');
     final messageChatId = chatId ?? data['chat_id']?.toString();
     if (messageChatId != null) {
       if (!_messagesByChatId.containsKey(messageChatId)) {
@@ -167,6 +205,7 @@ class AuthProvider with ChangeNotifier {
         'sender_id': senderId,
         'is_from_current_user': isFromCurrentUser,
         'chat_id': messageChatId,
+        'role': _role,
       });
       notifyListeners();
     }
@@ -181,6 +220,13 @@ class AuthProvider with ChangeNotifier {
       });
       _policeWebSocketService!.onNewMessage((data) {
         print('Получено новое сообщение: $data');
+        _allMessages.add(data);
+        notifyListeners();
+      });
+    }
+    if (_chatWebSocketService != null) {
+      _chatWebSocketService!.onNewMessage((data) {
+        print('Получено новое сообщение от ChatWebSocketService: $data');
         _allMessages.add(data);
         notifyListeners();
       });

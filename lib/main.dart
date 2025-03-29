@@ -17,6 +17,7 @@ class QamqorPoliceApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'Qamqor Police',
       theme: ThemeData(
         primaryColor: Color(0xFF1E88E5),

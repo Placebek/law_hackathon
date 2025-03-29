@@ -60,7 +60,7 @@ class _PoliceChatPageState extends State<PoliceChatPage> {
                           itemBuilder: (context, index) {
                             final message = _messages[index];
                             final isFromCurrentUser =
-                                message['is_from_current_user'] ?? false;
+                                message['role'] == 'police';
                             return Align(
                               alignment:
                                   isFromCurrentUser
@@ -136,10 +136,8 @@ class _PoliceChatPageState extends State<PoliceChatPage> {
 
   void _sendMessage(AuthProvider authProvider) {
     final message = _messageController.text.trim();
-    if (message.isNotEmpty && authProvider.chatWebSocketServiceById != null) {
-      authProvider.chatWebSocketServiceById!.sendMessage(
-        '{"message": "$message"}',
-      );
+    if (message.isNotEmpty) {
+      authProvider.sendChatMessage(message, widget.chatId.toString());
       _messageController.clear();
       _scrollToBottom();
     }

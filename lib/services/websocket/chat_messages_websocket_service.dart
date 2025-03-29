@@ -5,8 +5,7 @@ import '../../utils/constants.dart';
 class ChatMessagesWebSocketService {
   final IOWebSocketChannel channel;
   Function(List<Map<String, dynamic>>)? _onChatMessages;
-  Function(Map<String, dynamic>)?
-  _onNewMessage; // Добавляем для новых сообщений
+  Function(Map<String, dynamic>)? _onNewMessage;
 
   ChatMessagesWebSocketService(String token, int chatId)
     : channel = IOWebSocketChannel.connect(
@@ -17,6 +16,7 @@ class ChatMessagesWebSocketService {
       (message) {
         print('Получено сообщение от WebSocket: $message');
         final data = jsonDecode(message as String) as Map<String, dynamic>;
+        print('eqewqfqf' + data['event']);
         switch (data['event']) {
           case 'chat_messages':
             print('Обработка события chat_messages: ${data['data']}');
@@ -55,7 +55,7 @@ class ChatMessagesWebSocketService {
     final data = {'message': text};
     try {
       channel.sink.add(jsonEncode(data));
-      print('Отправлено сообщение: $data');
+      print('Отправлено сообщение на сервер: $data');
     } catch (e) {
       print('Ошибка отправки сообщения: $e');
     }

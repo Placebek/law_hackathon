@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart'; // Добавляем для SchedulerBinding
+import 'package:flutter/scheduler.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../services/api/case_service.dart';
@@ -35,7 +35,6 @@ class _HomePageState extends State<HomePage>
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     if (_isLoading && authProvider.token != null) {
       _loadData();
-      _setupWebSocketListeners();
     } else if (authProvider.token == null) {
       SchedulerBinding.instance.addPostFrameCallback((_) {
         Navigator.pushReplacementNamed(context, '/login');
@@ -60,10 +59,8 @@ class _HomePageState extends State<HomePage>
     }
   }
 
-  void _processMessages(
-    List<Map<String, dynamic>> messages,
-    AuthProvider authProvider,
-  ) {
+  void _processMessages(List<Map<String, dynamic>> messages) {
+    final authProvider = Provider.of<AuthProvider>(context);
     _messagesBySender.clear();
     for (var message in messages) {
       final senderId =
@@ -83,132 +80,51 @@ class _HomePageState extends State<HomePage>
     }
   }
 
-  void _setupWebSocketListeners() {
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    if (authProvider.policeWebSocketService != null) {
-      authProvider.policeWebSocketService!.onAllMessages((messages) {
-        setState(() {
-          _processMessages(messages, authProvider);
-        });
-      });
-      authProvider.policeWebSocketService!.onNewMessage((data) {
-        final senderId =
-            data['fromUserId']?.toString() ?? data['sender_id']?.toString();
-        if (senderId != null) {
-          setState(() {
-            if (!_messagesBySender.containsKey(senderId)) {
-              _messagesBySender[senderId] = [];
-            }
-            _messagesBySender[senderId]!.add({
-              'content': data['content'],
-              'is_user':
-                  data['is_user'] ??
-                  (data['fromUserId'] == authProvider.username),
-              'chat_id': data['chat_id'],
-            });
-          });
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Новое сообщение от $senderId: ${data['content']}'),
-            ),
-          );
-        }
-      });
-    }
-    if (authProvider.chatWebSocketService != null) {
-      authProvider.chatWebSocketService!.onNewMessage((data) {
-        final senderId =
-            data['fromUserId']?.toString() ?? data['sender_id']?.toString();
-        if (senderId != null) {
-          setState(() {
-            if (!_messagesBySender.containsKey(senderId)) {
-              _messagesBySender[senderId] = [];
-            }
-            _messagesBySender[senderId]!.add({
-              'content': data['content'],
-              'is_user':
-                  data['is_user'] ??
-                  (data['fromUserId'] == authProvider.username),
-              'chat_id': data['chat_id'],
-            });
-          });
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Новое сообщение от $senderId: ${data['content']}'),
-            ),
-          );
-        }
-      });
-      authProvider.chatWebSocketService!.onIncomingCall((data) async {
-        await _audioPlayer.setAsset('assets/ringtone.mp3');
-        await _audioPlayer.play();
-        showDialog(
-          context: context,
-          builder:
-              (context) => AlertDialog(
-                title: Text('Входящий звонок'),
-                content: Text('Звонит: ${data['fromUserId']}'),
-                actions: [
-                  TextButton(
-                    onPressed: () {
-                      _audioPlayer.stop();
-                      Navigator.pop(context);
-                    },
-                    child: Text('Отклонить'),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      _audioPlayer.stop();
-                      Navigator.pop(context);
-                    },
-                    child: Text('Принять'),
-                  ),
-                ],
-              ),
-        );
-      });
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    final authProvider = Provider.of<AuthProvider>(context);
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Qamqor Police', style: TextStyle(color: Colors.white)),
-        backgroundColor: Color(0xFF1E88E5),
-        bottom: TabBar(
-          controller: _tabController,
-          labelColor: Colors.white,
-          unselectedLabelColor: Colors.white70,
-          indicatorColor: Colors.white,
-          tabs: [
-            Tab(text: 'Дела'),
-            Tab(text: 'Заявления'),
-            Tab(text: 'Сообщения'),
-          ],
-        ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.logout),
-            onPressed: () {
-              authProvider.logout();
-              Navigator.pushReplacementNamed(context, '/login');
-            },
-          ),
-        ],
-      ),
-      body:
-          _isLoading
-              ? Center(child: CircularProgressIndicator())
-              : TabBarView(
-                controller: _tabController,
-                children: [
-                  _buildList(_cases, 'Дел нет'),
-                  _buildList(_reports, 'Заявлений нет'),
-                  _buildSenderList(),
-                ],
+    return Consumer<AuthProvider>(
+      builder: (context, authProvider, child) {
+        _processMessages(
+          authProvider.allMessages,
+        ); // Используем сообщения из AuthProvider
+        return Scaffold(
+          appBar: AppBar(
+            title: Text('Qamqor Police', style: TextStyle(color: Colors.white)),
+            backgroundColor: Color(0xFF1E88E5),
+            bottom: TabBar(
+              controller: _tabController,
+              labelColor: Colors.white,
+              unselectedLabelColor: Colors.white70,
+              indicatorColor: Colors.white,
+              tabs: [
+                Tab(text: 'Дела'),
+                Tab(text: 'Заявления'),
+                Tab(text: 'Сообщения'),
+              ],
+            ),
+            actions: [
+              IconButton(
+                icon: Icon(Icons.logout),
+                onPressed: () {
+                  authProvider.logout();
+                  Navigator.pushReplacementNamed(context, '/login');
+                },
               ),
+            ],
+          ),
+          body:
+              _isLoading
+                  ? Center(child: CircularProgressIndicator())
+                  : TabBarView(
+                    controller: _tabController,
+                    children: [
+                      _buildList(_cases, 'Дел нет'),
+                      _buildList(_reports, 'Заявлений нет'),
+                      _buildSenderList(),
+                    ],
+                  ),
+        );
+      },
     );
   }
 
@@ -232,7 +148,6 @@ class _HomePageState extends State<HomePage>
         final senderId = _messagesBySender.keys.elementAt(index);
         final lastMessage = _messagesBySender[senderId]!.last;
         final chatId = lastMessage['chat_id'] ?? 1;
-        print('Переход в чат с senderId=$senderId, chatId=$chatId');
         return Card(
           margin: EdgeInsets.symmetric(vertical: 5, horizontal: 10),
           child: ListTile(
