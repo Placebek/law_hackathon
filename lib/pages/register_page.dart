@@ -35,7 +35,7 @@ class _RegisterPageState extends State<RegisterPage> {
       } else if (_step == 2) {
         final request =
             VerificationRequest(email: _email!, code: _codeController.text);
-        await _authService.verifyCode(request);
+        await _authService.login(request.email, request.code);
         setState(() {
           _step = 3;
         });

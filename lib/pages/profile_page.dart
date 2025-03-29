@@ -43,14 +43,10 @@ class ProfilePage extends StatelessWidget {
         CircleAvatar(
           radius: 50,
           backgroundColor: Color(0xFF1E88E5),
-          child: Text(
-            authProvider.user!.name[0].toUpperCase(),
-            style: TextStyle(fontSize: 40, color: Colors.white),
-          ),
         ),
         SizedBox(height: 20),
         Text(
-          'Привет, ${authProvider.user!.name}!',
+          'Привет, Жандарбек!',
           style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,

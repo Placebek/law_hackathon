@@ -22,7 +22,9 @@ class _LoginPageState extends State<LoginPage> {
         _passwordController.text,
       );
       // Используем accessToken вместо token
-      await authProvider.setToken(response.accessToken, _emailController.text);
+      print("FFFFFFF: ${response}");
+      await authProvider.setToken(
+          response['access_token'], _emailController.text);
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => HomePage()),

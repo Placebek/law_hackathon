@@ -15,6 +15,7 @@ class MyApp extends StatelessWidget {
     return ChangeNotifierProvider(
       create: (context) => AuthProvider(),
       child: MaterialApp(
+        debugShowCheckedModeBanner: false,
         title: 'Jardem Alert', // Обновим название
         theme: ThemeData(
           primaryColor: Color(0xFF1E88E5), // Голубой

@@ -1,43 +1,50 @@
-import 'package:socket_io_client/socket_io_client.dart' as IO;
+// import 'dart:convert';
+// import 'package:web_socket_channel/io.dart';
 
-class WebSocketService {
-  final IO.Socket _socket;
-  final Map<String, Function(dynamic)> _listeners = {};
+// class WebSocketService {
+//   late IOWebSocketChannel _channel;
+//   final Map<String, Function(dynamic)> _listeners = {};
 
-  WebSocketService(String token)
-      : _socket = IO.io(
-          'htphthtpthptphtphtptphpthpthptpthptphp',
-          IO.OptionBuilder()
-              .setTransports(['websocket'])
-              .setExtraHeaders({'Authorization': 'Bearer $token'})
-              .disableAutoConnect()
-              .build(),
-        ) {
-    _socket.connect();
-    _setupListeners();
-  }
+//   WebSocketService(String token) {
+//     _channel = IOWebSocketChannel.connect(
+//       Uri.parse('ws://192.168.43.31:8000/v1/ws/chat?token=$token'),
+//     );
+//     _setupListeners();
+//     print('WebSocketService initialized with token: $token');
+//   }
 
-  void _setupListeners() {
-    _socket.on('newMessage', (data) {
-      if (_listeners['newMessage'] != null) {
-        _listeners['newMessage']!(data);
-      }
-    });
-  }
+//   void _setupListeners() {
+//     _channel.stream.listen(
+//       (data) {
+//         print('Received message: $data');
+//         if (_listeners['newMessage'] != null) {
+//           _listeners['newMessage']!(jsonDecode(data));
+//         }
+//       },
+//       onError: (error) {
+//         print('WebSocket error: $error');
+//       },
+//       onDone: () {
+//         print('WebSocket disconnected');
+//       },
+//     );
+//   }
 
-  void onNewMessage(Function(dynamic) callback) {
-    _listeners['newMessage'] = callback;
-  }
+//   void onNewMessage(Function(dynamic) callback) {
+//     _listeners['newMessage'] = callback;
+//   }
 
-  void sendMessage(String toUserId, String message) {
-    _socket.emit('sendMessage', {
-      'toUserId': toUserId,
-      'text': message,
-    });
-  }
+//   void sendMessage(String message) {
+//     final payload = jsonEncode({
+//       'message': message,
+//     });
+//     _channel.sink.add(payload);
+//     print('Sent message: $payload');
+//   }
 
-  void dispose() {
-    _socket.disconnect();
-    _listeners.clear();
-  }
-}
+//   void dispose() {
+//     _channel.sink.close();
+//     _listeners.clear();
+//     print('WebSocket disposed');
+//   }
+// }

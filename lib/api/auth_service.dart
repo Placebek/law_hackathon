@@ -1,112 +1,60 @@
-import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:law_code_flutter/api/models/register_request.dart';
+import 'dart:convert';
 import 'models/verification_request.dart';
-import 'models/register_request.dart';
-import 'models/register_response.dart';
-import 'token_manager.dart';
 
 class AuthService {
-  static const String _baseUrl = 'http://192.168.43.31:8000';
+  final String _baseUrl = 'http://192.168.43.31:8000';
 
-  // Отправка email для получения кода
-  Future<bool> sendEmail(String email) async {
+  Future<Map<String, dynamic>> sendEmail(String email) async {
     final response = await http.post(
-      Uri.parse('$_baseUrl/api/auth/send_email'),
+      Uri.parse('$_baseUrl/v1/user/send_email'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'email': email}),
     );
 
     if (response.statusCode == 200) {
-      return true;
+      return jsonDecode(response.body);
     } else {
       throw Exception('Ошибка отправки email: ${response.body}');
     }
   }
 
-  // Проверка кода
-  Future<bool> verifyCode(VerificationRequest request) async {
+  Future<Map<String, dynamic>> verifyCode(String token, String code) async {
     final response = await http.post(
-      Uri.parse('$_baseUrl/api/auth/verify'),
+      Uri.parse('$_baseUrl/v1/user/verify/$token'), // Токен в пути
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode(request.toJson()),
+      body: jsonEncode({'code': code}),
     );
-
     if (response.statusCode == 200) {
-      return true;
+      return jsonDecode(response.body);
     } else {
       throw Exception('Ошибка верификации: ${response.body}');
     }
   }
 
-  // Регистрация
-  Future<RegisterResponse> register(RegisterRequest request) async {
+  Future<Map<String, dynamic>> register(RegisterRequest request) async {
     final response = await http.post(
-      Uri.parse('$_baseUrl/api/auth/register'),
-      headers: {'Content-Type': 'application/json'},
+      Uri.parse('$_baseUrl/v1/user/register'),
       body: jsonEncode(request.toJson()),
     );
-
     if (response.statusCode == 201) {
-      final data = RegisterResponse.fromJson(jsonDecode(response.body));
-      await TokenManager.saveToken(data.accessToken);
-      return data;
+      return jsonDecode(response.body);
     } else {
       throw Exception('Ошибка регистрации: ${response.body}');
     }
   }
 
-  // Логин
-  Future<RegisterResponse> login(String email, String password) async {
+  Future<dynamic> login(String email, String password) async {
     final response = await http.post(
-      Uri.parse('$_baseUrl/api/user/login'),
+      Uri.parse('$_baseUrl/v1/user/login'),
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'email': email,
-        'password': password,
-      }),
+      body: jsonEncode({'email': email, 'password': password}),
     );
-
     if (response.statusCode == 200) {
-      final data = RegisterResponse.fromJson(jsonDecode(response.body));
-      await TokenManager.saveToken(data.accessToken); // Сохраняем токен
-      return data;
+      return jsonDecode(response.body);
     } else {
-      throw Exception('Ошибка входа: ${response.body}');
-    }
-  }
-
-  // Пример GET-запроса
-  Future<String> getProtectedData() async {
-    final token = await TokenManager.getToken();
-    final response = await http.get(
-      Uri.parse('$_baseUrl/some_protected_endpoint'),
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-      },
-    );
-
-    if (response.statusCode == 200) {
-      return response.body;
-    } else {
-      throw Exception('Ошибка получения данных: ${response.body}');
-    }
-  }
-
-  // Пример PATCH-запроса
-  Future<void> updateUserData(String field, String value) async {
-    final token = await TokenManager.getToken();
-    final response = await http.patch(
-      Uri.parse('$_baseUrl/user/update'),
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode({field: value}),
-    );
-
-    if (response.statusCode != 200) {
-      throw Exception('Ошибка обновления: ${response.body}');
+      throw Exception('Не удалось войти: ${response.body}');
     }
   }
 }

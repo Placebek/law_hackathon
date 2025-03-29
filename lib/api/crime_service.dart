@@ -21,7 +21,7 @@ class CrimeService {
   }) async {
     final response = await http.get(
       Uri.parse(
-          '$_baseUrl/api/crime/all_crimes?latitude=$latitude&longitude=$longitude&distance=$distance'),
+          '$_baseUrl/v1/crime/all_crimes?latitude=$latitude&longitude=$longitude&distance=$distance'),
       headers: {'Content-Type': 'application/json'},
     );
 

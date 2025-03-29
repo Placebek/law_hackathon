@@ -1,16 +1,24 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_phone_direct_caller/flutter_phone_direct_caller.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class EmergencyButton extends StatelessWidget {
   const EmergencyButton({super.key});
 
   Future<void> _makeEmergencyCall(BuildContext context) async {
-    const String number = '102';
+    final Uri phoneUri = Uri(scheme: 'tel', path: '102');
     try {
-      bool? callSuccess = await FlutterPhoneDirectCaller.callNumber(number);
-      if (callSuccess != true) {
+      if (await canLaunchUrl(phoneUri)) {
+        await launchUrl(phoneUri);
+        // Показываем уведомление после открытия телефона
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Не удалось выполнить звонок на 102')),
+          SnackBar(
+            content: Text('Нажмите "Позвонить" в открывшемся приложении'),
+            duration: Duration(seconds: 3),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Не удалось открыть приложение телефона')),
         );
       }
     } catch (e) {
