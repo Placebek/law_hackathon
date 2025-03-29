@@ -54,12 +54,23 @@ def run_migrations_offline() -> None:
         context.run_migrations()
 
 
+from alembic import context
+from sqlalchemy import engine_from_config, pool
+
+# Assuming target_metadata is defined elsewhere in env.py
+# If not, ensure it's imported or defined appropriately
+
+def include_object(object, name, type_, reflected, compare_to):
+    """Filter out PostGIS-related tables like spatial_ref_sys."""
+    if type_ == "table" and name == "spatial_ref_sys":
+        return False
+    return True
+
 def run_migrations_online() -> None:
     """Run migrations in 'online' mode.
 
     In this scenario we need to create an Engine
     and associate a connection with the context.
-
     """
     connectable = engine_from_config(
         config.get_section(config.config_ini_section, {}),
@@ -69,7 +80,9 @@ def run_migrations_online() -> None:
 
     with connectable.connect() as connection:
         context.configure(
-            connection=connection, target_metadata=target_metadata
+            connection=connection,
+            target_metadata=target_metadata,
+            include_object=include_object,  # Add this to exclude spatial_ref_sys
         )
 
         with context.begin_transaction():
