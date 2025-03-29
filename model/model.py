@@ -30,6 +30,7 @@ class User(Base):
     statements = relationship("Statement", foreign_keys="Statement.user_id", back_populates="user")
     session_calls = relationship("SessionCall", foreign_keys="SessionCall.user_id", back_populates="user")
     chats = relationship("Chat", foreign_keys="Chat.user_id", back_populates="user")
+    incidents = relationship("Incident", back_populates="user")
 
 
 class Rank(Base):
@@ -106,7 +107,7 @@ class Type(Base):
 class Station(Base):
     __tablename__ = "stations"  
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True,)
     station_name = Column(String(100), nullable=False)  
 
     geolocation_id = Column(Integer, ForeignKey('geolocations.id', ondelete='CASCADE'), nullable=True)
@@ -197,3 +198,28 @@ class Message(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=True)  
 
     chat = relationship("Chat", back_populates="messages")
+
+
+class IncidentType(Base):
+    __tablename__ = "incident_types"
+
+    id = Column(Integer, primary_key=True, index=True)
+    type_name = Column(String(255), default="", nullable=True)
+
+    incidents = relationship("Incident", back_populates="incident_type")
+
+class Incident(Base):
+    __tablename__ = "incidents"
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String(255), default="", nullable=True)
+    description = Column(Text, default="", nullable=True)
+    photo = Column(Text, default="", nullable=True)
+    video = Column(Text, default="", nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=True)
+
+    incident_type_id = Column(Integer, ForeignKey("incident_types.id"), nullable=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+
+    incident_type = relationship("IncidentType", back_populates="incidents")  
+    user = relationship("User", back_populates="incidents")
