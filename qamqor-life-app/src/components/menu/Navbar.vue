@@ -1,12 +1,18 @@
 <template>
-  <div class="bg-[#6388A8] text-white p-8">
-      <div class="text-[30px] mb-16">Qamqor Life</div>
+  <div class="bg-[#3B938A] text-white p-8">
+      <div class="text-[30px] mb-8 flex justify-center">
+        <div class="">
+          <img src="../../assets/img/logo2.png" alt="" class="w-[95px] h-[80px]">
+        </div>
+        <div>
+        </div>
+      </div>
 
       <div class="flex flex-col gap-6">
         <div class="">
           <button
             @click="openModal"
-            class="bg-white text-[#6388A8] cursor-pointer px-4 py-3 rounded-[25px] transition-all duration-200 ease-in-out"
+            class="bg-[#F3FFDE] text-[#6388A8] cursor-pointer px-4 py-3 rounded-[25px] transition-all duration-200 ease-in-out"
           >
             Добавить нового сотрудника
           </button>
@@ -46,7 +52,6 @@ const router = useRouter();
 
 const menuItems = [
   { name: 'home', label: 'Главное окно', path: '/home' },
-  { name: 'statistic', label: 'Статистика' },
   { name: 'about', label: 'О нас' },
   { name: 'settings', label: 'Настройки' },
 ];

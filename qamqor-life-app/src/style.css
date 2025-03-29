@@ -5,3 +5,21 @@
 html, body, #app {
     height: 100%;
   }
+
+.gradient-shadow {
+  position: relative;
+  z-index: 0; /* чтобы псевдоэлемент был позади */
+}
+
+.gradient-shadow::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, #005047, #A14200);
+  filter: blur(10px);
+  border-radius: inherit; /* чтобы скругления совпадали */
+}

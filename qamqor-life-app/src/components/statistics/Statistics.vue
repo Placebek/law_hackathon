@@ -6,7 +6,7 @@
         <div class="flex justify-between">
           <div 
             @click="goBack"
-            class="text-[#6388A8] text-[18px] pl-5 cursor-pointer flex items-center gap-2 hover:underline"
+            class="text-[#377973] text-[18px] pl-5 cursor-pointer flex items-center gap-2 hover:underline"
           >
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
               <path fill-rule="evenodd" d="M10 18a.75.75 0 01-.53-.22l-7.5-7.5a.75.75 0 010-1.06l7.5-7.5a.75.75 0 111.06 1.06L3.31 9.25H17a.75.75 0 010 1.5H3.31l7.22 7.22a.75.75 0 01-.53 1.28z" clip-rule="evenodd" />
@@ -14,7 +14,7 @@
             Назад
           </div>
           
-          <div class="bg-[#6388A8] rounded-2xl text-white p-3 text-[18px]">
+          <div class="bg-[#00655A] rounded-2xl text-white p-3 text-[18px]">
             {{ formattedDate }}
           </div>
         </div>
@@ -23,8 +23,8 @@
           <div class="grid grid-cols-6 gap-6">
             <div></div>
             <div>full name</div>
-            <div>genre</div>
-            <div>time</div>
+            <div>Заявленный</div>
+            <div>Время заявки</div>
             <div>application time</div>
             <div>raised matter</div>
           </div>
@@ -34,87 +34,23 @@
           <div class="w-[95%] h-[1px] bg-gray-300 mx-auto my-4"></div>
         </div>
 
-        <div class="pt-10 mx-24">
-          <div class="grid grid-cols-6 gap-6">
-            <div class="w-[70px] h-[30px] bg-[#6388A8] rounded-[5px]"></div>
-            <div>Серік Диляра</div>
-            <div>Ж</div>
-            <div>23:25:04</div>
-            <div>23:25:04</div>
-            <div>AC326023</div>
-          </div>
-        </div>
-        <div class="pt-10 mx-24">
-          <div class="grid grid-cols-6 gap-6">
-            <div class="w-[70px] h-[30px] bg-[#6388A8] rounded-[5px]"></div>
-            <div>Серік Диляра</div>
-            <div>Ж</div>
-            <div>23:25:04</div>
-            <div>23:25:04</div>
-            <div>AC326023</div>
-          </div>
-        </div>
-        <div class="pt-10 mx-24">
-          <div class="grid grid-cols-6 gap-6">
-            <div class="w-[70px] h-[30px] bg-[#6388A8] rounded-[5px]"></div>
-            <div>Серік Диляра</div>
-            <div>Ж</div>
-            <div>23:25:04</div>
-            <div>23:25:04</div>
-            <div>AC326023</div>
-          </div>
-        </div>
-        <div class="pt-10 mx-24">
-          <div class="grid grid-cols-6 gap-6">
-            <div class="w-[70px] h-[30px] bg-[#6388A8] rounded-[5px]"></div>
-            <div>Серік Диляра</div>
-            <div>Ж</div>
-            <div>23:25:04</div>
-            <div>23:25:04</div>
-            <div>AC326023</div>
-          </div>
-        </div>
-        <div class="pt-10 mx-24">
-          <div class="grid grid-cols-6 gap-6">
-            <div class="w-[70px] h-[30px] bg-[#6388A8] rounded-[5px]"></div>
-            <div>Серік Диляра</div>
-            <div>Ж</div>
-            <div>23:25:04</div>
-            <div>23:25:04</div>
-            <div>AC326023</div>
-          </div>
-        </div>
-        <div class="pt-10 mx-24">
-          <div class="grid grid-cols-6 gap-6">
-            <div class="w-[70px] h-[30px] bg-[#6388A8] rounded-[5px]"></div>
-            <div>Серік Диляра</div>
-            <div>Ж</div>
-            <div>23:25:04</div>
-            <div>23:25:04</div>
-            <div>AC326023</div>
-          </div>
-        </div>
-        <div class="pt-10 mx-24">
-          <div class="grid grid-cols-6 gap-6">
-            <div class="w-[70px] h-[30px] bg-[#6388A8] rounded-[5px]"></div>
-            <div>Серік Диляра</div>
-            <div>Ж</div>
-            <div>23:25:04</div>
-            <div>23:25:04</div>
-            <div>AC326023</div>
-          </div>
-        </div>
-        <div class="pt-10 mx-24">
-          <div class="grid grid-cols-6 gap-6">
-            <div class="w-[70px] h-[30px] bg-[#6388A8] rounded-[5px]"></div>
-            <div>Серік Диляра</div>
-            <div>Ж</div>
-            <div>23:25:04</div>
-            <div>23:25:04</div>
-            <div>AC326023</div>
-          </div>
-        </div>
 
+        <div 
+          v-if="statements" 
+          v-for="(statement, index) in statements" 
+          :key="index"
+          @click="goToStatementProfile(statement)"
+          class="pt-10 mx-24"
+          > 
+          <div class="grid grid-cols-6 gap-6">
+            <div class="w-[70px] h-[30px] bg-[#6388A8] rounded-[5px]"></div>
+            <div>{{ statement.first_name }}  {{ statement.last_name }}</div>
+            <div>{{ statement.recipient }}</div>
+            <div>{{ new Date(statement.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) }}</div>
+            <div>{{ statement.type.type_name }}</div>
+            <div>{{ statement.policeman.first_name }} {{ statement.policeman.last_name }}</div>
+          </div>
+        </div>
 
       </div>
 
@@ -123,33 +59,66 @@
 </template>
 
 
-<script setup>
-import { ref, computed } from 'vue'
-import { useRoute } from 'vue-router'
-import { OhVueIcon, addIcons } from "oh-vue-icons";
-import { IoSearch } from "oh-vue-icons/icons";
+<script>
+import { ref, onMounted, computed} from "vue";
+import { useRoute, useRouter } from 'vue-router';
 import Navbar from "../menu/Navbar.vue";
 
-import { useRouter } from 'vue-router';
+import { useStatementStore } from "../../stores/statement"
 
-const router = useRouter();
+export default {
+  name: "StatementPage",
+  components: {
+    Navbar,
+  },
+  setup() {
+    const statements = ref(null);
+    const route = useRoute();
+    const router = useRouter();
+    const rawDate = route.query.date;
 
-function goBack() {
-  router.back();
-}
+    const selectedDate = ref(rawDate ? new Date(rawDate) : new Date());
 
+    const formattedDate = computed(() =>
+      selectedDate.value.toLocaleDateString('ru-RU', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      })
+    );
 
-addIcons(IoSearch);
+    function goBack() {
+      router.back();
+    }
 
-const route = useRoute();
-const rawDate = route.query.date;
-const selectedDate = ref(rawDate ? new Date(rawDate) : new Date());
+    function goToStatementProfile(statement) {
+      debugger
+      router.push({
+        path: `/statement/${statement.id}`,
+      });
+    }
 
-const formattedDate = computed(() =>
-  selectedDate.value.toLocaleDateString('ru-RU', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  })
-);
+    const getStatementDate = async () => {
+        try {
+            const statementStore = useStatementStore();
+            const statement_result = await statementStore.getAllStatement();
+            statements.value = statement_result;
+        } catch (err) {
+            console.error("Ошибка при получении продуктов:", err);
+            this.error = "Не удалось загрузить продукты";
+        }
+    };
+
+    onMounted(() => {
+      getStatementDate()
+    });
+
+    return {
+      goBack,
+      statements,
+      goToStatementProfile,
+      formattedDate,
+    };
+  },
+};
 </script>

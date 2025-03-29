@@ -1,5 +1,5 @@
 <template>
-  <div class="p-4 bg-white text-black rounded-[25px] shadow-lg" style="box-shadow: 0 4px 10px #6388A8">
+  <div class="p-4 bg-white text-black rounded-[25px] shadow-lg" style="box-shadow: 0 4px 10px #FFFFFF">
     <div class="flex justify-between items-center mb-4">
       <button @click="prevMonth">←</button>
       <div>
@@ -9,7 +9,7 @@
       <button @click="nextMonth">→</button>
     </div>
 
-    <div class="grid grid-cols-7 gap-1 text-center mb-2 font-semibold">
+    <div class="grid grid-cols-7 gap-1 text-center text-[#C46412] mb-2 font-semibold">
       <div v-for="day in daysOfWeek" :key="day">{{ day }}</div>
     </div>
 
@@ -21,7 +21,7 @@
         @click="selectDate(day)"
         :class="[
           'cursor-pointer p-2 rounded-full',
-          isSelected(day) ? 'bg-[#6388A8] text-white' : 'hover:bg-[#BED2E3]'
+          isSelected(day) ? 'bg-[#00655A] text-white' : 'hover:bg-[#BED2E3]'
         ]"
       >
         {{ day }}

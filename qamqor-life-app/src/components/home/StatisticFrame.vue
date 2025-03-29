@@ -1,8 +1,8 @@
 <template>
-  <div class="bg-white rounded-[25px] shadow-xl p-6 w-full max-w-2xl mx-auto text-gray-700" style="box-shadow: 0 4px 10px #BA6F2E">
+  <div class="bg-white rounded-[25px] shadow-xl p-6 w-full max-w-2xl mx-auto text-gray-700" style="box-shadow: 0 4px 10px #FFFFFF">
     <div class="flex items-center justify-between mb-4">
       <div>
-        <h2 class="text-xl font-bold">Статистика</h2>
+        <h2 class="text-xl text-[#377973] font-bold">Статистика</h2>
         <p class="text-sm text-gray-400">Previous day</p>
       </div>
       <div class="text-[#BA6F2E] px-3 py-1 text-sm rounded-full flex items-center gap-2">
@@ -29,19 +29,19 @@
 
     <div class="mt-4 flex gap-6">
       <div class="flex items-center gap-2">
-        <span class="w-3 h-3 inline-block bg-[#6388A8] rounded-full"></span>
+        <span class="w-3 h-3 inline-block bg-[#E1B89A] rounded-full"></span>
         <span class="text-sm text-gray-600">Принятые заявления</span>
       </div>
       <div class="flex items-center gap-2">
-        <span class="w-3 h-3 inline-block bg-pink-300 rounded-full"></span>
+        <span class="w-3 h-3 inline-block bg-[#FEB27D] rounded-full"></span>
         <span class="text-sm text-gray-600">Заявления в отработке</span>
       </div>
       <div class="flex items-center gap-2">
-        <span class="w-3 h-3 inline-block bg-pink-300 rounded-full"></span>
+        <span class="w-3 h-3 inline-block bg-[#78BFB8] rounded-full"></span>
         <span class="text-sm text-gray-600">Ожидают проверки</span>
       </div>
       <div class="flex items-center gap-2">
-        <span class="w-3 h-3 inline-block bg-pink-300 rounded-full"></span>
+        <span class="w-3 h-3 inline-block bg-[#2F8178] rounded-full"></span>
         <span class="text-sm text-gray-600">Завершённые дела</span>
       </div>
     </div>
@@ -110,7 +110,7 @@ export default {
           stops: [0, 90, 100],
         },
       },
-      colors: ["#6388A8"],
+      colors: ["#E1B89A", "#FEB27D", "#78BFB8", "#2F8178"],
       xaxis: {
         categories: ["Утро", "День", "Вечер", "Ночь"],
         labels: {

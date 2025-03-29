@@ -15,27 +15,27 @@
         </div>
 
 
-        <div v-if="policeman" class="mt-8 bg-white text-[#005047] p-8 rounded-2xl shadow-sm w-[98%] mx-auto h-full" style="box-shadow: 0 4px 10px #A14200">
+        <div v-if="statement" class="mt-8 bg-white text-[#005047] p-8 rounded-2xl shadow-sm w-[98%] mx-auto h-full" style="box-shadow: 0 4px 10px #A14200">
           <div class="flex items-center justify-between">
             <div class="flex-1">
-              <h2 class="text-2xl font-bold ">{{ policeman.first_name }} {{ policeman.last_name }}</h2>
-              <p class="text-lg">{{ policeman.rank.name }}</p>
+              <h2 class="text-2xl font-bold ">{{ statement.recipient }} {{ statement.recipient }}</h2>
+              <p class="text-lg">{{ statement.policeman.first_name }}</p>
               <p class="text-base mt-4">
-                <span class="font-semibold">Отдел полиции:</span>{{ policeman.station.station_name }}<br>
+                <span class="font-semibold">Отдел полиции:</span> Октябрьский отдел полиции УП г. Караганды<br>
                 <span class="font-semibold">Стаж:</span> 20 лет<br>
-                <span class="font-semibold">Год рождения: </span>{{ policeman.birth_day }}<br>
+                <span class="font-semibold">Год рождения: </span>{{ statement.birth_day }}<br>
                 <span class="font-semibold">Область ответственности:</span> обеспечение общественной безопасности, расследование преступлений, контроль оперативных мероприятий<br>
                 <span class="font-semibold">Дополнительно:</span> Высокий уровень профессионализма, лидерские качества, награжден многочисленными наградами.
               </p>
             </div>
             <div class="flex-shrink-0 w-[200px] ml-8">
-              <img src="https://photogov-com.akamaized.net/examples/original/US.webp" alt="Фото полковника" class="w-full h-64 rounded-lg object-cover" />
+              <div></div>
             </div>
             <div>
             </div>
           </div>
           <div class="mt-6">
-            {{ policeman.resume }}  
+            {{ statement.resume }}  
           </div>
         </div>
 
@@ -46,31 +46,27 @@
 </template>
 
 
-
-
-
-
 <script>
-import { ref, onMounted, computed} from "vue";
+import { ref, onMounted} from "vue";
 import { useRoute, useRouter } from 'vue-router';
 import Navbar from "../menu/Navbar.vue";
 
-import { usePolicemanStore } from "../../stores/policeman";
+import { useStatementStore } from "../../stores/statement"
 
 
 export default {
-  name: "ProfilePage",
+  name: "StatementPage",
   components: {
     Navbar,
   },
   props: {
-    policemanId: {
+    statementId: {
       type: String,
       required: true,
     },
   },
   setup() {
-    const policeman = ref(null);
+    const statement = ref(null);
     const route = useRoute();
     const router = useRouter();
 
@@ -78,23 +74,24 @@ export default {
       router.back();
     }
 
-    const policemanId = route.params.id;
+    const statementId = route.params.id;
 
-    const getPolicemanDate = async () => {
+    const getStatementDate = async () => {
         try {
-            const policemanStore = usePolicemanStore();
-            const policeman_result = await policemanStore.getPolicemanByID(policemanId);
+            const statementStore = useStatementStore();
+            const statement_result = await statementStore.getStatementByID(statementId);
 
-            const dateStr = policeman_result.birth_day;
-            const dateObj = new Date(dateStr);
+            // const dateStr = policeman_result.birth_day;
+            // const dateObj = new Date(dateStr);
 
-            const day = ("0" + dateObj.getDate()).slice(-2); // "28"
-            const month = ("0" + (dateObj.getMonth() + 1)).slice(-2); // "03" (месяцы с 0, поэтому +1)
-            const year = dateObj.getFullYear(); // 2025
+            // const day = ("0" + dateObj.getDate()).slice(-2); // "28"
+            // const month = ("0" + (dateObj.getMonth() + 1)).slice(-2); // "03" (месяцы с 0, поэтому +1)
+            // const year = dateObj.getFullYear(); // 2025
 
-            policeman_result.birth_day = `${day}.${month}.${year}`;
+            // statement_result.birth_day = `${day}.${month}.${year}`;
 
-            policeman.value = policeman_result;
+            statement.value = statement_result;
+            debugger
         } catch (err) {
             console.error("Ошибка при получении продуктов:", err);
             this.error = "Не удалось загрузить продукты";
@@ -102,12 +99,13 @@ export default {
     };
 
     onMounted(() => {
-      getPolicemanDate()
+      debugger
+      getStatementDate()
     });
 
     return {
       goBack,
-      policeman
+      statement
     };
   },
 };

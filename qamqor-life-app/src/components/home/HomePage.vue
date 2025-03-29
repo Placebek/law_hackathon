@@ -11,8 +11,9 @@
           <input
             type="text"
             placeholder="search"
-            class="w-full h-[55px] ps-8 bg-white border-x-[3px] border-b-[4px] border-[#BA6F2E] rounded-b-[25px] outline-none text-[#6388A8]"
-          />
+            class="w-full h-[55px] ps-8 bg-white border-x-[3px] border-b-[3px] rounded-b-[25px] outline-none text-[#6388A8] shadow-sm"
+            style="box-shadow: 0 4px 10px #BA6F2E;"
+            />
         </div>
       </div>
 
@@ -31,11 +32,12 @@
         </div>
       </div>
 
-      <div class="pl-8 pr-8 space-y-6 pb-8"> 
+      <div class="pl-8 pr-8 space-y-8 pb-8"> 
         <div 
           v-for="(department, index) in departments" 
           :key="index"
-          class="bg-white rounded-[25px] flex items-start justify-start text-[#6388A8] cursor-pointer"
+          class="bg-white rounded-[25px] flex items-start justify-start text-[#00655A] cursor-pointer shadow-3xl"
+          style="box-shadow: 0 4px 10px #E1B89A"
           @click="goToDepartment(department)"
         >
           <div class="p-5 flex flex-col items-start">
@@ -96,9 +98,6 @@ export default {
     function goToDepartment(department) {
       router.push({
         path: `/department/${department.id}`,
-        query: {
-          date: date.value.toISOString(),
-        },
       });
     }
 

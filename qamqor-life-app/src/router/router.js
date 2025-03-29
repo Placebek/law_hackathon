@@ -3,6 +3,7 @@ import HomePage from '../components/Home/HomePage.vue'
 import Department from '../components/department/Department.vue'
 import Statistics from '../components/statistics/Statistics.vue'
 import ProfilePage from '../components/profile/ProfilePage.vue'
+import StatementPage from '../components/statement/StatementPage.vue'
 
 const routes = [
   {
@@ -21,9 +22,14 @@ const routes = [
     component: Statistics,
   },
   {
-    path: '/profile',
+    path: '/profile/:id',
     name: 'ProfilePage',
     component: ProfilePage,
+  },
+  {
+    path: '/statement/:id',
+    name: 'StatementPage',
+    component: StatementPage,
   },
 ]
 
