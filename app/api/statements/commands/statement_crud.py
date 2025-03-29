@@ -1,5 +1,5 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from model.model import Statement
+from model.model import Statement, Type
 import logging
 from datetime import datetime
 from sqlalchemy import select
@@ -99,4 +99,12 @@ async def get_statement_by_id(statement_id: int, db: AsyncSession) -> Statement:
     logger.info(f"Found statement with id={statement_id}")
     return statement
 
+async def get_all_types_statement(db: AsyncSession):
+    stmt = await db.execute(select(Type))
+    types = stmt.scalars().all()
 
+    if not types:
+        logger.info("Not found")
+        return []
+    logger.info(f"{len(types)}")
+    return types

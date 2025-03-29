@@ -7,48 +7,85 @@
 <body>
     <h1>User Call Interface</h1>
     <button onclick="startCall()">Call Police</button>
+    <button onclick="endCall()">End Call</button>
     <audio id="remoteAudio" autoplay></audio>
+    <p id="status">Waiting...</p>
     <script>
         let pc;
         let ws;
 
         async function startCall() {
-            pc = new RTCPeerConnection({
-                iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
-            });
-            ws = new WebSocket("ws://172.20.10.2:8000/v1/ws/call");
+            try {
+                pc = new RTCPeerConnection({
+                    iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
+                });
+                ws = new WebSocket("ws://localhost:8000/v1/ws/call");
 
-            // Захват аудио с микрофона пользователя
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            stream.getTracks().forEach(track => pc.addTrack(track, stream));
+                // Захват аудио
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                stream.getTracks().forEach(track => {
+                    pc.addTrack(track, stream);
+                    console.log("User: Added track", track);
+                });
 
-            // Обработка ICE-кандидатов
-            pc.onicecandidate = event => {
-                if (event.candidate) {
-                    ws.send(JSON.stringify({ "ice": event.candidate.toJSON() }));
-                }
-            };
+                // Логирование ICE-кандидатов
+                pc.onicecandidate = event => {
+                    if (event.candidate) {
+                        ws.send(JSON.stringify({ "ice": event.candidate.toJSON() }));
+                        console.log("User: Sent ICE candidate", event.candidate);
+                    } else {
+                        console.log("User: ICE gathering complete");
+                    }
+                };
 
-            // Воспроизведение аудио от полиции
-            pc.ontrack = event => {
-                const audio = document.getElementById("remoteAudio");
-                audio.srcObject = event.streams[0];
-            };
+                // Логирование состояния соединения
+                pc.onconnectionstatechange = () => {
+                    console.log("User: Connection state:", pc.connectionState);
+                };
 
-            // Создание и отправка offer
-            const offer = await pc.createOffer();
-            await pc.setLocalDescription(offer);
-            ws.onopen = () => ws.send(JSON.stringify({ "sdp": pc.localDescription }));
+                // Воспроизведение удалённого звука
+                pc.ontrack = event => {
+                    const audio = document.getElementById("remoteAudio");
+                    audio.srcObject = event.streams[0];
+                    console.log("User: Received remote track", event.streams[0]);
+                };
 
-            // Обработка сообщений от сервера
-            ws.onmessage = async (event) => {
-                const data = JSON.parse(event.data);
-                if (data.sdp) {
-                    await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
-                } else if (data.ice) {
-                    await pc.addIceCandidate(new RTCIceCandidate(data.ice));
-                }
-            };
+                // Создание и отправка offer
+                const offer = await pc.createOffer();
+                await pc.setLocalDescription(offer);
+                ws.onopen = () => {
+                    ws.send(JSON.stringify({ "sdp": pc.localDescription }));
+                    document.getElementById("status").textContent = "Calling...";
+                    console.log("User: Sent SDP offer", pc.localDescription);
+                };
+
+                ws.onmessage = async (event) => {
+                    const data = JSON.parse(event.data);
+                    console.log("User: Received message", data);
+                    if (data.sdp) {
+                        await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
+                        document.getElementById("status").textContent = "Connected!";
+                    } else if (data.ice) {
+                        await pc.addIceCandidate(new RTCIceCandidate(data.ice));
+                        console.log("User: Added ICE candidate", data.ice);
+                    } else if (data.error) {
+                        document.getElementById("status").textContent = "Error: " + data.error;
+                        ws.close();
+                    }
+                };
+
+                ws.onerror = (error) => console.error("User: WebSocket error", error);
+            } catch (e) {
+                console.error("User: Error in startCall", e);
+                document.getElementById("status").textContent = "Error: " + e.message;
+            }
+        }
+
+        function endCall() {
+            if (pc) pc.close();
+            if (ws) ws.close();
+            document.getElementById("status").textContent = "Call ended";
+            console.log("User: Call ended");
         }
     </script>
 </body>

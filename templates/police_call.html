@@ -8,49 +8,81 @@
     <h1>Police Call Interface</h1>
     <p id="status">Waiting for call...</p>
     <button onclick="startCall()">Accept Call</button>
+    <button onclick="endCall()">End Call</button>
     <audio id="remoteAudio" autoplay></audio>
     <script>
         let pc;
         let ws;
 
         async function startCall() {
-            pc = new RTCPeerConnection({
-                iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
-            });
-            ws = new WebSocket("ws://172.20.10.2:8000/v1/ws/call");
+            try {
+                pc = new RTCPeerConnection({
+                    iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
+                });
+                ws = new WebSocket("ws://localhost:8000/v1/ws/call");
 
-            // Захват аудио с микрофона полиции
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            stream.getTracks().forEach(track => pc.addTrack(track, stream));
+                // Захват аудио
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                stream.getTracks().forEach(track => {
+                    pc.addTrack(track, stream);
+                    console.log("Police: Added track", track);
+                });
 
-            // Обработка ICE-кандидатов
-            pc.onicecandidate = event => {
-                if (event.candidate) {
-                    ws.send(JSON.stringify({ "ice": event.candidate.toJSON() }));
-                }
-            };
-
-            // Воспроизведение аудио от пользователя
-            pc.ontrack = event => {
-                const audio = document.getElementById("remoteAudio");
-                audio.srcObject = event.streams[0];
-            };
-
-            // Обработка сообщений от сервера (ожидание offer и отправка answer)
-            ws.onmessage = async (event) => {
-                const data = JSON.parse(event.data);
-                if (data.sdp) {
-                    document.getElementById("status").textContent = "Call received!";
-                    await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
-                    if (data.sdp.type === "offer") {
-                        const answer = await pc.createAnswer();
-                        await pc.setLocalDescription(answer);
-                        ws.send(JSON.stringify({ "sdp": pc.localDescription }));
+                // Логирование ICE-кандидатов
+                pc.onicecandidate = event => {
+                    if (event.candidate) {
+                        ws.send(JSON.stringify({ "ice": event.candidate.toJSON() }));
+                        console.log("Police: Sent ICE candidate", event.candidate);
+                    } else {
+                        console.log("Police: ICE gathering complete");
                     }
-                } else if (data.ice) {
-                    await pc.addIceCandidate(new RTCIceCandidate(data.ice));
-                }
-            };
+                };
+
+                // Логирование состояния соединения
+                pc.onconnectionstatechange = () => {
+                    console.log("Police: Connection state:", pc.connectionState);
+                };
+
+                // Воспроизведение удалённого звука
+                pc.ontrack = event => {
+                    const audio = document.getElementById("remoteAudio");
+                    audio.srcObject = event.streams[0];
+                    console.log("Police: Received remote track", event.streams[0]);
+                };
+
+                ws.onmessage = async (event) => {
+                    const data = JSON.parse(event.data);
+                    console.log("Police: Received message", data);
+                    if (data.sdp) {
+                        document.getElementById("status").textContent = "Call received!";
+                        await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
+                        if (data.sdp.type === "offer") {
+                            const answer = await pc.createAnswer();
+                            await pc.setLocalDescription(answer);
+                            ws.send(JSON.stringify({ "sdp": pc.localDescription }));
+                            console.log("Police: Sent SDP answer", pc.localDescription);
+                        }
+                    } else if (data.ice) {
+                        await pc.addIceCandidate(new RTCIceCandidate(data.ice));
+                        console.log("Police: Added ICE candidate", data.ice);
+                    } else if (data.error) {
+                        document.getElementById("status").textContent = "Error: " + data.error;
+                        ws.close();
+                    }
+                };
+
+                ws.onerror = (error) => console.error("Police: WebSocket error", error);
+            } catch (e) {
+                console.error("Police: Error in startCall", e);
+                document.getElementById("status").textContent = "Error: " + e.message;
+            }
+        }
+
+        function endCall() {
+            if (pc) pc.close();
+            if (ws) ws.close();
+            document.getElementById("status").textContent = "Call ended";
+            console.log("Police: Call ended");
         }
     </script>
 </body>

@@ -19,31 +19,27 @@ with open("templates/police_call.html", "r") as f:
 
 @router.get("/user-call", response_class=HTMLResponse)
 async def get_user_call_page():
-    """Страница для пользователя"""
     return HTMLResponse(user_html)
 
 @router.get("/police-call", response_class=HTMLResponse)
 async def get_police_call_page():
-    """Страница для полиции"""
-    return HTMLResponse(police_html)
-
-@router.get("/police-call", response_class=HTMLResponse)
-async def get_police_call_page():
-    """Страница для полиции"""
     return HTMLResponse(police_html)
 
 @router.websocket("/ws/call")
 async def websocket_call(websocket: WebSocket):
-    """WebSocket для звонков без client_id"""
     await websocket.accept()
-    
     try:
-        pc, role = await call_manager.connect_client(websocket)
+        result = await call_manager.connect_client(websocket)
+        if result is None:
+            return
+
+        pc, role = result
+        logger.info(f"WebSocket opened for {role}")
 
         while True:
             data = await websocket.receive_text()
             message = json.loads(data)
-
+            logger.info(f"{role}: Received message {message}")
             if "sdp" in message:
                 sdp = message["sdp"]
                 await pc.setRemoteDescription(RTCSessionDescription(**sdp))
@@ -55,11 +51,11 @@ async def websocket_call(websocket: WebSocket):
             elif "ice" in message:
                 await call_manager.send_ice(role, message["ice"])
                 logger.info(f"Processed ICE for {role}")
-
     except Exception as e:
         logger.error(f"WebSocket error: {e}")
-        raise HTTPException(status_code=500, detail=f"WebSocket error: {str(e)}")
+        if "role" in locals():
+            await websocket.send_json({"error": str(e)})
     finally:
-        if "role" in locals():  # Проверяем, что роль была определена
+        if "role" in locals():
             await call_manager.disconnect_client(role)
         await websocket.close()

@@ -1,11 +1,11 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import APIRouter, Depends, Request, HTTPException
 from app.api.statements.schemas.create import StatementCreate
-from app.api.statements.schemas.response import StatementsResponse, StatementResponse, StatementsStatistics
+from app.api.statements.schemas.response import StatementsResponse, StatementResponse, StatementsStatistics, TypeResponse
 from app.api.statements.schemas.update import StatementUpdate
 from database.db import get_db
 from app.api.auth.commands.context import validate_access_token_by_id, get_access_token
-from app.api.statements.commands.statement_crud import create_statement, update_statement_policeman, get_all_statements, get_statement_by_id
+from app.api.statements.commands.statement_crud import create_statement, update_statement_policeman, get_all_statements, get_statement_by_id, get_all_types_statement
 from typing import List
 from app.api.statements.commands.stat_statistic_crud import get_statements_statistics
 
@@ -43,6 +43,15 @@ async def create_new_statement(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
     
+
+@router.get(
+    "/statement/all-types",
+    summary="Получить все типы заявлении",
+    response_model=List[TypeResponse]
+)
+async def read_all_types(db: AsyncSession = Depends(get_db)):
+    return await get_all_types_statement(db=db)
+
 @router.put(
     "/statement-update/{statement_id}",
     summary="Назначить сотрудника",
@@ -103,3 +112,4 @@ async def get_statistics(db: AsyncSession = Depends(get_db)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
     
+
