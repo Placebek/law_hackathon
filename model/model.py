@@ -65,6 +65,7 @@ class Policeman(Base):
     rank = relationship("Rank", back_populates="policeman")
     session_calls = relationship("SessionCall", foreign_keys="SessionCall.policeman_id", back_populates="policeman")
     chats = relationship("Chat", foreign_keys="Chat.policeman_id", back_populates="policeman")
+    statements = relationship("Statement", foreign_keys="Statement.policeman_id", back_populates="policeman")
 
 
 class Geolocation(Base):
@@ -90,9 +91,11 @@ class Statement(Base):
 
     user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=True)
     type_id = Column(Integer, ForeignKey('types.id', ondelete='CASCADE'), nullable=True)
+    policeman_id = Column(Integer, ForeignKey('policemans.id', ondelete='CASCADE'), nullable=True)
 
     user = relationship("User", foreign_keys=[user_id], back_populates="statements")
     type = relationship("Type", foreign_keys=[type_id], back_populates="statements")
+    policeman = relationship("Policeman", foreign_keys=[policeman_id], back_populates="statements")
 
 
 class Type(Base):

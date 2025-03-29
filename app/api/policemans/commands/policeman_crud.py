@@ -2,7 +2,7 @@ import logging
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from model.model import Policeman, Station
-from app.api.policemans.schemas.response import PolicemansResponse, StationResponse
+from app.api.policemans.schemas.response import PolicemansResponse, StationResponse, PolicemanResponse
 from sqlalchemy.orm import joinedload
 
 
@@ -38,12 +38,15 @@ async def get_station_by_id(station_id: int, db: AsyncSession) -> StationRespons
     logger.info(f"Найдена станция с ID {station_id} с {len(policemans)} полицейскими")
     return station_response
 
-async def get_policeman_by_id(policeman_id: int, db: AsyncSession) -> PolicemansResponse:
+async def get_policeman_by_id(policeman_id: int, db: AsyncSession) -> PolicemanResponse:
     logger.debug(f"Fetching policeman with id={policeman_id}")
     query = (
         select(Policeman)
         .where(Policeman.id == policeman_id)
-        .options(joinedload(Policeman.rank))  
+        .options(
+            joinedload(Policeman.rank), 
+            joinedload(Policeman.station).joinedload(Station.geolocation)
+        )  
     )
     result = await db.execute(query)
     policeman = result.unique().scalar_one_or_none()  
@@ -53,4 +56,4 @@ async def get_policeman_by_id(policeman_id: int, db: AsyncSession) -> Policemans
         raise ValueError(f"Policeman with id {policeman_id} not found")
     
     logger.info(f"Найден полицейский с ID {policeman_id}")
-    return PolicemansResponse.model_validate(policeman)
+    return PolicemanResponse.model_validate(policeman)

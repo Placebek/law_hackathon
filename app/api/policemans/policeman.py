@@ -1,7 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import Depends, APIRouter, HTTPException
 from database.db import get_db
-from app.api.policemans.schemas.response import StationResponse, PolicemansResponse
+from app.api.policemans.schemas.response import StationResponse, PolicemanResponse
 from app.api.policemans.commands.policeman_crud import get_station_by_id, get_policeman_by_id
 
 
@@ -24,7 +24,7 @@ async def get_station(station_id: int, db: AsyncSession = Depends(get_db)):
 @router.get(
     "/police/{policeman_id}",
     summary="Get policeman by ID",
-    response_model=PolicemansResponse
+    response_model=PolicemanResponse
 )
 async def get_policeman(policeman_id: int, db: AsyncSession = Depends(get_db)):
     try:

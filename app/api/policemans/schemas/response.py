@@ -39,8 +39,25 @@ class StationResponse(BaseModel):
     class Config:
         from_attributes = True
 
-class PolicemanByIdResponse(BaseModel):
-    station: Optional[StationResponse]  
+class Station(BaseModel):
+    id: int
+    station_name: str
+    geolocation: Optional[GeolocationResponse] = None
+
+    class Config:
+        from_attributes = True
+
+class PolicemanResponse(BaseModel):
+    id: int
+    first_name: str
+    last_name: str
+    email: str
+    phone_number: str
+    photo: Optional[str] = None
+    birth_day: datetime
+    resume: Optional[str] = None
+    rank: RankResponse
+    station: Station
 
     class Config:
         from_attributes = True
