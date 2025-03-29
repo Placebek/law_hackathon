@@ -14,24 +14,27 @@ router = APIRouter()
 
 @router.post(
     "/add-statement",
-    summary="Create Statement",
-    response_description="succesfully"
+    summary="Create a new statement (anonymous or non-anonymous)",
+    response_description=""
 )
 async def create_new_statement(
-    statement: StatementCreate,  
+    statement: StatementCreate,
     request: Request,
     db: AsyncSession = Depends(get_db)
 ):
     try:
-        access_token = await get_access_token(request)
-        user_id_str = await validate_access_token_by_id(access_token)
-        user_id = int(user_id_str)
+        user_id = None
+        if not statement.anonymous:
+            access_token = await get_access_token(request)
+            user_id_str = await validate_access_token_by_id(access_token)
+            user_id = int(user_id_str)
         
         new_statement = await create_statement(
             recipient=statement.recipient,
             text=statement.text,
             type_id=statement.type_id,
-            user_id=user_id,
+            user_id=user_id,  
+            anonymous=statement.anonymous,
             db=db
         )
         return new_statement
@@ -99,3 +102,4 @@ async def get_statistics(db: AsyncSession = Depends(get_db)):
         return statistics
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+    

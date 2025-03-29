@@ -68,6 +68,7 @@ class StatementResponse(BaseModel):
     recipient: Optional[str] = None
     text: Optional[str] = None
     created_at: Optional[datetime] = None
+    anonymous: bool
     type: Optional[TypeResponse] = None
     user: Optional[User] = None
     policeman: Optional[Policeman] = None

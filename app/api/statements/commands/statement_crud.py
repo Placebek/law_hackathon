@@ -11,19 +11,20 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 async def create_statement(
+    db: AsyncSession,
     recipient: str,
     text: str,
     type_id: int | None,
-    user_id: int,
-    db: AsyncSession
+    user_id: int | None,  
+    anonymous: bool = False
 ) -> Statement:
-    logger.debug(f"Creating statement with recipient={recipient}, user_id={user_id}")
+    logger.debug(f"Creating statement with recipient={recipient}, user_id={user_id}, anonymous={anonymous}")
 
     statement = Statement(
         recipient=recipient,
         text=text,
         type_id=type_id,
-        user_id=user_id,
+        user_id=user_id if not anonymous else None,
         created_at=datetime.now()  
     )
 
@@ -31,7 +32,7 @@ async def create_statement(
     await db.commit()
     await db.refresh(statement)
     
-    logger.info(f"Statement created with id={statement.id}")
+    logger.info(f"Statement created with id={statement.id}, anonymous={anonymous}")
     return statement
 
 async def update_statement_policeman(
@@ -97,3 +98,5 @@ async def get_statement_by_id(statement_id: int, db: AsyncSession) -> Statement:
     
     logger.info(f"Found statement with id={statement_id}")
     return statement
+
+

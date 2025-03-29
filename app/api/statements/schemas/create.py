@@ -6,6 +6,7 @@ class StatementCreate(BaseModel):
     recipient: Optional[str] = ""
     text: Optional[str] = ""
     type_id: Optional[int] = None
+    anonymous: Optional[bool] = False
 
     class Config:
         from_attributes = True
