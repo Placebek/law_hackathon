@@ -106,7 +106,7 @@ class Type(Base):
 class Station(Base):
     __tablename__ = "stations"  
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True,)
     station_name = Column(String(100), nullable=False)  
 
     geolocation_id = Column(Integer, ForeignKey('geolocations.id', ondelete='CASCADE'), nullable=True)
@@ -196,3 +196,6 @@ class Message(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=True)  
 
     chat = relationship("Chat", back_populates="messages")
+
+
+# class 
