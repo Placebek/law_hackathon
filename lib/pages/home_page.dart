@@ -3,8 +3,8 @@ import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../services/api/case_service.dart';
 import '../services/api/report_service.dart';
-import '../services/api/message_service.dart';
-import 'package:flutter_ringtone_player/flutter_ringtone_player.dart';
+import 'package:just_audio/just_audio.dart';
+import 'police_chat_page.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -16,11 +16,11 @@ class _HomePageState extends State<HomePage>
   late TabController _tabController;
   final CaseService _caseService = CaseService();
   final ReportService _reportService = ReportService();
-  final MessageService _messageService = MessageService();
   List<dynamic> _cases = [];
   List<dynamic> _reports = [];
-  List<dynamic> _messages = [];
+  Map<String, List<Map<String, dynamic>>> _messagesBySender = {};
   bool _isLoading = true;
+  final AudioPlayer _audioPlayer = AudioPlayer();
 
   @override
   void initState() {
@@ -35,7 +35,6 @@ class _HomePageState extends State<HomePage>
     try {
       _cases = await _caseService.getCases(authProvider.token!);
       _reports = await _reportService.getReports(authProvider.token!);
-      _messages = await _messageService.getMessages(authProvider.token!);
       setState(() => _isLoading = false);
     } catch (e) {
       ScaffoldMessenger.of(
@@ -45,42 +44,76 @@ class _HomePageState extends State<HomePage>
     }
   }
 
+  void _processMessages(List<Map<String, dynamic>> messages) {
+    _messagesBySender.clear();
+    for (var message in messages) {
+      final senderId = message['sender_id'].toString();
+      if (!_messagesBySender.containsKey(senderId)) {
+        _messagesBySender[senderId] = [];
+      }
+      _messagesBySender[senderId]!.add({
+        'content': message['content'],
+        'is_user': message['from_user'],
+      });
+    }
+  }
+
   void _setupWebSocketListeners() {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    authProvider.webSocketService.onIncomingCall((data) {
-      FlutterRingtonePlayer.playRingtone();
-      showDialog(
-        context: context,
-        builder:
-            (context) => AlertDialog(
-              title: Text('Входящий звонок'),
-              content: Text('Звонит: ${data['from']}'),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    FlutterRingtonePlayer.stop();
-                    Navigator.pop(context);
-                  },
-                  child: Text('Отклонить'),
-                ),
-                TextButton(
-                  onPressed: () {
-                    FlutterRingtonePlayer.stop();
-                    Navigator.pop(context);
-                  },
-                  child: Text('Принять'),
-                ),
-              ],
-            ),
-      );
-    });
-
-    authProvider.webSocketService.onNewMessage((data) {
-      setState(() => _messages.add(data['text']));
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Новое сообщение: ${data['text']}')),
-      );
-    });
+    if (authProvider.policeWebSocketService != null) {
+      authProvider.policeWebSocketService!.onAllMessages((messages) {
+        setState(() {
+          _processMessages(messages);
+        });
+      });
+    }
+    if (authProvider.chatWebSocketService != null) {
+      authProvider.chatWebSocketService!.onNewMessage((data) {
+        final senderId = data['fromUserId'].toString();
+        setState(() {
+          if (!_messagesBySender.containsKey(senderId)) {
+            _messagesBySender[senderId] = [];
+          }
+          _messagesBySender[senderId]!.add({
+            'content': data['content'],
+            'is_user': data['is_user'],
+          });
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Новое сообщение от $senderId: ${data['content']}'),
+          ),
+        );
+      });
+      authProvider.chatWebSocketService!.onIncomingCall((data) async {
+        await _audioPlayer.setAsset('assets/ringtone.mp3');
+        await _audioPlayer.play();
+        showDialog(
+          context: context,
+          builder:
+              (context) => AlertDialog(
+                title: Text('Входящий звонок'),
+                content: Text('Звонит: ${data['fromUserId']}'),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      _audioPlayer.stop();
+                      Navigator.pop(context);
+                    },
+                    child: Text('Отклонить'),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      _audioPlayer.stop();
+                      Navigator.pop(context);
+                    },
+                    child: Text('Принять'),
+                  ),
+                ],
+              ),
+        );
+      });
+    }
   }
 
   @override
@@ -119,7 +152,7 @@ class _HomePageState extends State<HomePage>
                 children: [
                   _buildList(_cases, 'Дел нет'),
                   _buildList(_reports, 'Заявлений нет'),
-                  _buildList(_messages, 'Сообщений нет'),
+                  _buildSenderList(),
                 ],
               ),
     );
@@ -137,10 +170,41 @@ class _HomePageState extends State<HomePage>
     );
   }
 
+  Widget _buildSenderList() {
+    if (_messagesBySender.isEmpty) return Center(child: Text('Сообщений нет'));
+    return ListView.builder(
+      itemCount: _messagesBySender.keys.length,
+      itemBuilder: (context, index) {
+        final senderId = _messagesBySender.keys.elementAt(index);
+        final lastMessage = _messagesBySender[senderId]!.last;
+        final chatId =
+            lastMessage['chat_id'] ?? 1; // Используем 1 по умолчанию для теста
+        print('Переход в чат с senderId=$senderId, chatId=$chatId');
+        return Card(
+          margin: EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+          child: ListTile(
+            title: Text('Житель $senderId'),
+            subtitle: Text(lastMessage['content']),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder:
+                      (context) =>
+                          PoliceChatPage(senderId: senderId, chatId: chatId),
+                ),
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
   @override
   void dispose() {
     _tabController.dispose();
-    FlutterRingtonePlayer.stop();
+    _audioPlayer.dispose();
     super.dispose();
   }
 }

@@ -38,8 +38,8 @@ dependencies:
   http: ^1.2.1
   shared_preferences: ^2.2.3
   socket_io_client: ^2.0.3
-  flutter_ringtone_player:
-    path: ./local_plugins/flutter_ringtone_player
+  just_audio: ^0.9.36
+  web_socket_channel: ^2.4.0
 
 dev_dependencies:
   flutter_test:
