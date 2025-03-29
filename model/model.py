@@ -30,6 +30,7 @@ class User(Base):
     statements = relationship("Statement", foreign_keys="Statement.user_id", back_populates="user")
     session_calls = relationship("SessionCall", foreign_keys="SessionCall.user_id", back_populates="user")
     chats = relationship("Chat", foreign_keys="Chat.user_id", back_populates="user")
+    incidents = relationship("Incident", back_populates="user")
 
 
 class Rank(Base):
@@ -198,4 +199,25 @@ class Message(Base):
     chat = relationship("Chat", back_populates="messages")
 
 
-# class 
+class IncidentType(Base):
+    __tablename__ = "incident_types"
+
+    id = Column(Integer, primary_key=True, index=True)
+    type_name = Column(String(255), default="", nullable=True)
+
+    incidents = relationship("Incident", back_populates="incident_type")
+
+class Incident(Base):
+    __tablename__ = "incidents"
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String(255), default=True, nullable=True)
+    description = Column(Text, default="", nullable=True)
+    photo = Column(Text, default="", nullable=True)
+    video = Column(Text, default="", nullable=True)
+
+    incident_type_id = Column(Integer, ForeignKey("incident_types.id"), nullable=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+
+    incident_type = relationship("IncidentType", back_populates="incidents")  
+    user = relationship("User", back_populates="incidents")

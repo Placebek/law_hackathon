@@ -1,8 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import Depends, APIRouter, HTTPException, Request
+from fastapi import Depends, APIRouter, HTTPException
 from database.db import get_db
 from app.api.policemans.schemas.response import StationResponse, PolicemansResponse
-from typing import List
 from app.api.policemans.commands.policeman_crud import get_station_by_id, get_policeman_by_id
 
 
