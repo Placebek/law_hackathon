@@ -1,27 +1,56 @@
 import logging 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from model.model import Policeman
-from app.api.policemans.schemas.response import PolicemansResponse
+from model.model import Policeman, Station
+from app.api.policemans.schemas.response import PolicemansResponse, StationResponse
 from sqlalchemy.orm import joinedload
 
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
-async def get_policemans_by_station(station_id: int, db: AsyncSession) -> list[PolicemansResponse]:
-    logger.debug(f"Fetching policemans for station_id={station_id}")
+async def get_station_by_id(station_id: int, db: AsyncSession) -> StationResponse:
+    logger.debug(f"Fetching station with id={station_id}")
     query = (
+        select(Station)
+        .where(Station.id == station_id)
+        .options(joinedload(Station.geolocation))  
+    )
+    result = await db.execute(query)
+    station = result.unique().scalar_one_or_none()
+
+    if not station:
+        logger.info(f"Станция с ID {station_id} не найдена")
+        raise ValueError(f"Station with id {station_id} not found")
+
+    policemans_query = (
         select(Policeman)
         .where(Policeman.station_id == station_id)
         .options(joinedload(Policeman.rank))  
     )
-    result = await db.execute(query)
-    policemans = result.unique().scalars().all()  
+    policemans_result = await db.execute(policemans_query)
+    policemans = policemans_result.unique().scalars().all()
+    policemans_list = [PolicemansResponse.model_validate(p) for p in policemans]
 
-    if not policemans:
-        logger.info(f"Полицейские не найдены для участка с ID {station_id}")
-        return []
+    station_response = StationResponse.model_validate(station)
+    station_response.policemans = policemans_list
+
+    logger.info(f"Найдена станция с ID {station_id} с {len(policemans)} полицейскими")
+    return station_response
+
+async def get_policeman_by_id(policeman_id: int, db: AsyncSession) -> PolicemansResponse:
+    logger.debug(f"Fetching policeman with id={policeman_id}")
+    query = (
+        select(Policeman)
+        .where(Policeman.id == policeman_id)
+        .options(joinedload(Policeman.rank))  
+    )
+    result = await db.execute(query)
+    policeman = result.unique().scalar_one_or_none()  
+
+    if not policeman:
+        logger.info(f"Полицейский с ID {policeman_id} не найден")
+        raise ValueError(f"Policeman with id {policeman_id} not found")
     
-    logger.info(f"Найдено {len(policemans)} полицейских для участка с ID {station_id}")
-    return [PolicemansResponse.model_validate(policeman) for policeman in policemans]
+    logger.info(f"Найден полицейский с ID {policeman_id}")
+    return PolicemansResponse.model_validate(policeman)
