@@ -43,7 +43,7 @@
                 hover:shadow-lg hover:bg-[#e3f3f1] hover:scale-[1.02] rounded-xl cursor-pointer"
         > 
           <div class="grid grid-cols-6 gap-6 p-4">
-            <div class="w-[70px] h-[30px] bg-[#6388A8] rounded-[5px]"></div>
+            <div class="w-[70px] h-[30px] rounded-[5px]" :style="{ backgroundColor: colors[statement.id % colors.length] }"></div>
 
             <div v-if="statement.user?.first_name && statement.user?.last_name">
               {{ statement.user.first_name }} {{ statement.user.last_name }}
@@ -71,7 +71,6 @@
   </div>
 </template>
 
-
 <script>
 import { ref, onMounted, computed} from "vue";
 import { useRoute, useRouter } from 'vue-router';
@@ -89,6 +88,8 @@ export default {
     const route = useRoute();
     const router = useRouter();
     const rawDate = route.query.date;
+
+    const colors = ["#E1B89A", "#FEB27D", "#78BFB8", "#2F8178"];
 
     const selectedDate = ref(rawDate ? new Date(rawDate) : new Date());
 
@@ -131,6 +132,7 @@ export default {
       statements,
       goToStatementProfile,
       formattedDate,
+      colors,
     };
   },
 };

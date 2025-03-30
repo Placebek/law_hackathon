@@ -21,7 +21,7 @@
         @click="selectDate(day)"
         :class="[
           'cursor-pointer p-2 rounded-full',
-          isSelected(day) ? 'bg-[#00655A] text-white' : 'hover:bg-[#BED2E3]'
+          isSelected(day) ? 'bg-[#00655A] text-white' : 'hover:bg-[#daece9]'
         ]"
       >
         {{ day }}

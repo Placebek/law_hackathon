@@ -25,7 +25,7 @@
         </div>
 
         <div v-if="isModalOpen">
-          <AppointAnExecuter @close="closeModal" />
+          <AppointAnExecuter :statementId="statementId" @close="closeModal" />
         </div>
 
         <div v-if="statement"  class="mt-8 bg-white text-[#005047] p-8 rounded-2xl shadow-sm w-[98%] mx-auto h-full" style="box-shadow: 0 4px 10px #A14200">
@@ -135,7 +135,7 @@ export default {
       router.back();
     }
 
-    const statementId = route.params.id;
+    const statementId = Number(route.params.id)
 
     const isModalOpen = ref(false);
 
@@ -177,7 +177,6 @@ export default {
     };
 
     onMounted(() => {
-      debugger
       getStatementDate()
     });
 
@@ -187,6 +186,7 @@ export default {
       openModal,
       closeModal,
       isModalOpen,
+      statementId,
     };
   },
 };

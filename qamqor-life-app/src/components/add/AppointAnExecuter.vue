@@ -87,12 +87,18 @@
 import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { useDepartmentStore } from '../../stores/department';
 
+import { useRoute } from 'vue-router'
+
+const route = useRoute();
+
 const props = defineProps({
   statementId: {
     type: Number,
     required: true,
   }
 });
+
+const statementId = Number(route.params.id);
 
 const emit = defineEmits(['close', 'appoint']);
 
@@ -127,7 +133,9 @@ const getDepartmentByID = async (departmentId) => {
 const updateStatementByID = async (statementId, policemanId) => {
   try {
     const departmentStore = useDepartmentStore();
+    debugger
     await departmentStore.updateStatement(statementId, policemanId);
+    
   } catch (err) {
     console.error("Ошибка при обновлении заявления:", err);
   }
@@ -136,6 +144,8 @@ const updateStatementByID = async (statementId, policemanId) => {
 const filteredExecuters = computed(() => {
   return departmentData.value?.policemans || [];
 });
+
+
 
 const departmentWrapper = ref(null);
 const executersWrapper = ref(null);

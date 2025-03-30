@@ -89,23 +89,21 @@
       <div class="grid grid-cols-2 gap-4">
         <div>
           <label class="block text-[#15524C] mb-1">Звание</label>
-          <input
-            v-model="formData.rank"
-            type="text"
-            placeholder="Например, Старший полковник"
-            required
-            class="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#15524C]"
-          />
+          <select v-model="formData.rank" required class="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#15524C]">
+            <option disabled value="">Выберите ранг</option>
+            <option v-for="rank in ranks" :key="rank.id" :value="rank.name">
+              {{ rank.name }}
+            </option>
+          </select>
         </div>
         <div>
           <label class="block text-[#15524C] mb-1">Станция</label>
-          <input
-            v-model="formData.station"
-            type="text"
-            placeholder="Название отделения"
-            required
-            class="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#15524C]"
-          />
+          <select v-model="formData.station" required class="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#15524C]">
+            <option disabled value="">Выберите станцию</option>
+            <option v-for="station in stations" :key="station.id" :value="station.station_name">
+              {{ station.station_name }}
+            </option>
+          </select>
         </div>
       </div>
 
@@ -137,8 +135,9 @@
   </div>
 </template>
 
+
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { usePolicemanStore } from '../../stores/policeman'
 
 const emit = defineEmits(['close', 'submit'])
@@ -151,10 +150,26 @@ const formData = ref({
   phone: '',
   birthDate: '',
   photo: '',
-  rank: '',
-  station: '',
+  rank: '',    // Значение будет именем ранга, выбранным из списка
+  station: '', // Значение будет названием станции
   resume: '',
 })
+
+// Пример опций для рангов и станций.
+// В реальном приложении вы можете получить эти данные из API или из стора.
+const ranks = ref([
+  { id: 1, name: 'Сержант' },
+  { id: 2, name: 'Лейтенант' },
+  { id: 3, name: 'Капитан' },
+  { id: 4, name: 'Полковник' },
+]);
+
+const stations = ref([
+  { id: 1, station_name: 'Центральная станция' },
+  { id: 2, station_name: 'Северная станция' },
+  { id: 3, station_name: 'Южная станция' },
+  { id: 4, station_name: 'Восточная станция' },
+]);
 
 function handleFileUpload(event) {
   const file = event.target.files[0]
@@ -170,29 +185,29 @@ function handleFileUpload(event) {
 function closeModal() {
   emit('close')
 }
+
 async function submitForm() {
+  // Формируем объект payload согласно модели AdminCreatePolice
   const payload = {
     first_name: formData.value.firstName,
     last_name: formData.value.lastName,
     email: formData.value.email,
     phone_number: formData.value.phone,
-    rank_name: formData.value.rank, 
-    birth_day: formData.value.birthDate, 
-    station_name: formData.value.station,
-    resume: formData.value.resume
-  };
+    rank_name: formData.value.rank,        // Здесь передаётся выбранное название ранга
+    birth_day: formData.value.birthDate,     // Формат "YYYY-MM-DD"
+    station_name: formData.value.station,    // Здесь передаётся выбранное название станции
+    resume: formData.value.resume,
+    // Если API принимает фото, можно добавить formData.value.photo
+  }
 
   try {
-    const policemanStore = usePolicemanStore();
-    debugger
-    const result = await policemanStore.createPoliceman(payload);
-    debugger
-    console.log('Новый полицейский успешно создан:', result);
-    emit('submit', payload);
-    closeModal();
+    const policemanStore = usePolicemanStore()
+    const result = await policemanStore.createPoliceman(payload)
+    console.log('Новый полицейский успешно создан:', result)
+    emit('submit', payload)
+    closeModal()
   } catch (error) {
-    console.error("Ошибка при создании полицейского:", error);
+    console.error("Ошибка при создании полицейского:", error)
   }
 }
-
 </script>
