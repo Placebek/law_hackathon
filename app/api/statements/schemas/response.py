@@ -55,10 +55,10 @@ class User(BaseModel):
 
 class Policeman(BaseModel):
     id: int
-    first_name: str
-    last_name: str
-    email: str
-    phone_number: str
+    first_name: str = None
+    last_name: str = None
+    email: str = None
+    phone_number: str = None
     photo: Optional[str] = None
 
     class Config:

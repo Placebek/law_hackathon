@@ -150,12 +150,15 @@ async def get_police_statements(
     )
     result = await db.execute(query)
     statements = result.unique().scalars().all()
+    stmt = statements[0]
+    print("FFFFFFFFF: Base fields:", stmt.__dict__)
+    print("FFFFFFFFF: Type:", stmt.type.__dict__ if stmt.type else "No type")
+    print("FFFFFFFFF: User:", stmt.user.__dict__ if stmt.user else "No user")
 
     if not statements:
         logger.info(f"No statements found for user_id={policeman_id}")
     else:
         logger.info(f"Found {len(statements)} statements for user_id={policeman_id}")
-
     return statements
 
 async def update_statement_policeman_status(

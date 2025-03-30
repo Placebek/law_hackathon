@@ -23,7 +23,7 @@ class MessageResponse(BaseModel):
     id: int
     chat_id: int
     sender_id: int
-    role: str
+    role: str | None = None
     content: str
     created_at: datetime
 
