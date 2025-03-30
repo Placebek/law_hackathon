@@ -37,12 +37,12 @@ async def get_policeman(policeman_id: int, db: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
     
 @router.delete(
-    "/delete/policeman",
-    summary="уволнить сотрудника",
+    "/delete/policeman/{policeman_id}",  
+    summary="Уволить сотрудника",
     status_code=204
 )
 async def delete_policeman_endpoint(
-    policeman_id: int,
+    policeman_id: int,  
     db: AsyncSession = Depends(get_db)
 ):
     try:
