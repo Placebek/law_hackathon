@@ -1,8 +1,8 @@
 <template>
-  <div class="flex justify-start">
+  <div class="flex min-h-screen">
     <Navbar />
     <div class="w-full pt-8 pl-8 pr-8">
-      <div class="bg-white rounded-t-[25px] p-8 text-[#004D45]">
+      <div class="bg-white h-full rounded-t-[25px] p-8 text-[#004D45]">
         <div 
           @click="goBack"
           class="text-[#377973] text-[18px] pl-5 cursor-pointer flex items-center gap-2 hover:underline"
