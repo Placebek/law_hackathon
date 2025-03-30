@@ -1,9 +1,10 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import HomePage from '../components/Home/HomePage.vue'
 import Department from '../components/department/Department.vue'
 import Statistics from '../components/statistics/Statistics.vue'
 import ProfilePage from '../components/profile/ProfilePage.vue'
 import StatementPage from '../components/statement/StatementPage.vue'
+import Login from '../components/account/Login.vue'
+import HomePage from '../components/home/HomePage.vue'
 
 const routes = [
   {
@@ -30,6 +31,11 @@ const routes = [
     path: '/statement/:id',
     name: 'StatementPage',
     component: StatementPage,
+  },
+  {
+    path: '/login',
+    name: 'LoginPage',
+    component: Login,
   },
 ]
 

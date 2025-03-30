@@ -65,7 +65,7 @@ export default {
   },
   setup(props) {
     const formattedDate = computed(() =>
-      props.selectedDate.toLocaleDateString("en-US", {
+      props.selectedDate.toLocaleDateString("ru-RU", {
         day: "numeric",
         month: "long",
         year: "numeric",
