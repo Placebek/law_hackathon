@@ -11,6 +11,7 @@ from app.api.incidents.incident import router as incident_router
 from app.api.statements.statement import router as statement_router
 from app.api.news.news import router as news_router
 from app.api.calls.call import router as call_router
+from app.api.mailings.mailing import router as mailing_router
 
 
 route = APIRouter()
@@ -27,3 +28,4 @@ route.include_router(incident_router, prefix="", tags=["Incident"])
 route.include_router(statement_router, prefix="", tags=["Statement"])
 route.include_router(news_router, prefix="", tags=["News"])
 route.include_router(call_router, prefix="", tags=["Call"])
+route.include_router(mailing_router, prefix="", tags=["Mailing"])

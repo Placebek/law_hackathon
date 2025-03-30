@@ -66,7 +66,7 @@ class Policeman(Base):
     session_calls = relationship("SessionCall", foreign_keys="SessionCall.policeman_id", back_populates="policeman")
     chats = relationship("Chat", foreign_keys="Chat.policeman_id", back_populates="policeman")
     statements = relationship("Statement", foreign_keys="Statement.policeman_id", back_populates="policeman")
-
+    mailings = relationship("Mailing", foreign_keys="Mailing.policeman_id", back_populates="policeman")
 
 class Geolocation(Base):
     __tablename__ = "geolocations"  
@@ -239,3 +239,17 @@ class News(Base):
     image = Column(Text)
 
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=True) 
+
+
+class Mailing(Base):
+    __tablename__ = "mailings"
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String(200), default="", nullable=True)
+    description = Column(Text, default="", nullable=True)
+    photo = Column(Text, default="", nullable=True)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=True)
+
+    policeman_id = Column(Integer, ForeignKey('policemans.id', ondelete='CASCADE'), nullable=True)
+    policeman = relationship("Policeman", back_populates="mailings")

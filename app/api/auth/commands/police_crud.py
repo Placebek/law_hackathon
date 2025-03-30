@@ -9,6 +9,8 @@ from fastapi import HTTPException
 from jose import jwt, JWTError
 from core.config import settings
 from .send_email_police import generate_verification_code, send_verification_email
+import validators
+
 
 logger = logging.getLogger(__name__)
 handler = logging.StreamHandler()
@@ -19,6 +21,7 @@ logger.setLevel(logging.INFO)
 
 async def create_policeman(policeman: AdminCreatePolice, db: AsyncSession) -> dict:
     """Создает нового полицейского или обновляет существующего, отправляет код верификации."""
+    
     stmt = await db.execute(select(Policeman).filter(Policeman.email == policeman.email))
     existing_policeman = stmt.scalar_one_or_none()
 
@@ -192,3 +195,4 @@ async def delete_policeman(policeman_id: int, db: AsyncSession) -> dict:
     
     logger.info(f"Deleted policeman with ID: {policeman_id}")
     return {"message": f"Policeman with ID {policeman_id} deleted successfully"}
+
