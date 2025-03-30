@@ -4,6 +4,7 @@ from datetime import datetime
 
 
 class RankResponse(BaseModel):
+    id: int
     name: str
 
     class Config:

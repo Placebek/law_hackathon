@@ -23,42 +23,41 @@ async def create_policeman(policeman: AdminCreatePolice, db: AsyncSession) -> di
     existing_policeman = stmt.scalar_one_or_none()
 
     verification_code = await generate_verification_code()
-    
-    async with db.begin():  
-        if existing_policeman:
-            await db.execute(
-                update(Policeman)
-                .where(Policeman.email == policeman.email)
-                .values(
-                    first_name=policeman.first_name,
-                    last_name=policeman.last_name,
-                    phone_number=policeman.phone_number,
-                    rank_id=policeman.rank_id,
-                    birth_day=policeman.birth_day,
-                    station_id=policeman.station_id,
-                    is_active=False,
-                    verification_code=verification_code,
-                    resume=policeman.resume,
-                )
-            )
-            logger.info(f"Updated policeman with email: {policeman.email}")
-        else:
-            new_policeman = Policeman(
+     
+    if existing_policeman:
+        await db.execute(
+            update(Policeman)
+            .where(Policeman.email == policeman.email)
+            .values(
                 first_name=policeman.first_name,
                 last_name=policeman.last_name,
-                email=policeman.email,
                 phone_number=policeman.phone_number,
                 rank_id=policeman.rank_id,
                 birth_day=policeman.birth_day,
                 station_id=policeman.station_id,
                 is_active=False,
                 verification_code=verification_code,
-                resume=policeman.resume
+                resume=policeman.resume,
             )
-            db.add(new_policeman)
-            logger.info(f"Created new policeman with email: {policeman.email}")
+        )
+        logger.info(f"Updated policeman with email: {policeman.email}")
+    else:
+        new_policeman = Policeman(
+            first_name=policeman.first_name,
+            last_name=policeman.last_name,
+            email=policeman.email,
+            phone_number=policeman.phone_number,
+            rank_id=policeman.rank_id,
+            birth_day=policeman.birth_day,
+            station_id=policeman.station_id,
+            is_active=False,
+            verification_code=verification_code,
+            resume=policeman.resume
+        )
+        db.add(new_policeman)
+        logger.info(f"Created new policeman with email: {policeman.email}")
 
-        await db.commit()
+    await db.commit()
 
     await send_verification_email(policeman.email, verification_code)
     return {"message": "Policeman created successfully, verification code sent"}
