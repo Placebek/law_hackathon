@@ -41,7 +41,7 @@
           @click="goToDepartment(department)"
         >
           <div class="p-5 flex flex-col items-start">
-            <span class="text-2xl">{{ department.station_name }}</span>  
+            <span class="text-[20px]">{{ department.station_name }}</span>  
             <span class="text-sm">{{ department.geolocation.city }}</span>
           </div>
         </div>

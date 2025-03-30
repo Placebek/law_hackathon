@@ -2,7 +2,7 @@
   <div class="flex justify-start">
     <Navbar />
     <div class="w-full pt-8 pl-8 pr-8">
-      <div class="bg-white rounded-t-[25px] p-8 text-[#004D45] ">
+      <div class="bg-white rounded-t-[25px] p-8 text-[#004D45]">
         <div 
           @click="goBack"
           class="text-[#377973] text-[18px] pl-5 cursor-pointer flex items-center gap-2 hover:underline"
@@ -17,7 +17,6 @@
           <span class="text-3xl">{{ department.station_name }}</span>
           <span class="text-sm">{{ department.geolocation.city }} / {{ department.geolocation.street }}</span>
         </div>
-
 
         <div 
           v-if="department" 
@@ -35,7 +34,7 @@
                 <span class="text-sm">{{ policeman.rank.name }}</span>
                 <div class="pt-5">
                   <p class="text-[15px]">
-                    {{ policeman.resume }}
+                    {{ truncate(policeman.resume) }}
                   </p>
                 </div>
               </div>
@@ -52,8 +51,7 @@
 import { ref, onMounted } from "vue";
 import { useRoute, useRouter } from 'vue-router';
 import Navbar from "../menu/Navbar.vue";
-import { useDepartmentStore } from '../../stores/department'
-
+import { useDepartmentStore } from '../../stores/department';
 
 export default {
   name: "Department",
@@ -67,44 +65,45 @@ export default {
     },
   },
   setup() {
-    const data = ref(null);
     const route = useRoute();
     const router = useRouter();
+    const departmentId = route.params.id;
+    const department = ref(null);
 
     const goBack = () => {
       router.back();
     };
 
-    const departmentId = route.params.id;
-
-    const department = ref(null);
-
     const getDepartment = async () => {
-        try {
-            const departmentStore = useDepartmentStore();
-            const department_result = await departmentStore.getDepartmentByID(departmentId);
-            department.value = department_result;
-        } catch (err) {
-            console.error("Ошибка при получении продуктов:", err);
-            this.error = "Не удалось загрузить продукты";
-        }
+      try {
+        const departmentStore = useDepartmentStore();
+        const department_result = await departmentStore.getDepartmentByID(departmentId);
+        department.value = department_result;
+      } catch (err) {
+        console.error("Ошибка при получении данных:", err);
+      }
+    };
+
+    const truncate = (text, length = 600) => {
+      if (!text) return "";
+      return text.length > length ? text.slice(0, length) + "..." : text;
     };
 
     function goToPolicemanProfile(policeman) {
-      debugger
       router.push({
         path: `/profile/${policeman.id}`,
       });
     }
 
     onMounted(() => {
-      getDepartment()
+      getDepartment();
     });
 
     return {
       goBack,
       department,
-      goToPolicemanProfile
+      goToPolicemanProfile,
+      truncate,
     };
   },
 };

@@ -58,7 +58,7 @@
             <div class="pt-4 indent-10">
               <div v-if="statement.anonymous === false">
                 <p>
-                  Я, {{ statement.user.first_name}} {{ statement.user.last_name}}, проживающий по адресу: г. Караганда, ул. Сторителей 3/2, д. 45, кв. 12, паспорт №12345678, выдан 15.05.2015 г., настоящим сообщаю о факте шантажа в мой адрес.
+                  Я, {{ statement.user.first_name}} {{ statement.user.last_name}}, проживающий по адресу: г. Караганда, ул. Сторителей 3/2, д. 45, кв. 12, паспорт №12345678, выдан 15.05.2015 г.
                 </p>
               </div>    
               <div v-else>
