@@ -1,8 +1,9 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import Depends, APIRouter, HTTPException
 from database.db import get_db
-from app.api.policemans.schemas.response import StationResponse, PolicemanResponse
-from app.api.policemans.commands.policeman_crud import get_station_by_id, get_policeman_by_id
+from app.api.policemans.schemas.response import StationResponse, PolicemanResponse, RankResponse
+from app.api.policemans.commands.policeman_crud import get_station_by_id, get_policeman_by_id, delete_policeman, get_all_ranks_types
+from typing import List
 
 
 router = APIRouter()
@@ -34,3 +35,28 @@ async def get_policeman(policeman_id: int, db: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+    
+@router.delete(
+    "/delete/policeman/{policeman_id}",  
+    summary="Уволить сотрудника",
+    status_code=204
+)
+async def delete_policeman_endpoint(
+    policeman_id: int,  
+    db: AsyncSession = Depends(get_db)
+):
+    try:
+        await delete_policeman(policeman_id=policeman_id, db=db)
+        return None  
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+    
+@router.get(
+    "/rank_types/all",
+    summary="Get all rank types",
+    response_model=List[RankResponse]
+)
+async def read_all_incident_types(db: AsyncSession = Depends(get_db)):
+    return await get_all_ranks_types(db=db)

@@ -31,3 +31,15 @@ class IncidentResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class UserIncidentResponse(BaseModel):
+    id: int
+    title: str
+    description: Optional[str] = None
+    photo: Optional[str] = None
+    video: Optional[str] = None
+    incident_type: Optional[IncidentTypeResponse] = None
+    created_at: datetime
+
+    class Config:
+        from_attributes = True

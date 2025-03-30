@@ -98,3 +98,25 @@ async def get_all_incident_types(db: AsyncSession):
         return []
     logger.info(f"{len(types)}")
     return types
+
+async def get_user_incident(
+    user_id: int,
+    db: AsyncSession
+) -> list[Incident]:
+    logger.debug(f"Fetching incident for user_id={user_id}")
+
+    query = (
+        select(Incident)
+        .where(Incident.user_id == user_id)
+        .options(joinedload(Incident.incident_type),
+        )
+    )
+    result = await db.execute(query)
+    incidents = result.unique().scalars().all()
+
+    if not incidents:
+        logger.info(f"No statements found for user_id={incidents}")
+        return []
+    else:
+        logger.info(f"Found {len(incidents)} statements for user_id={user_id}")
+        return incidents

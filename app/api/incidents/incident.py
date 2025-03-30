@@ -3,9 +3,9 @@ from fastapi import Depends, APIRouter, HTTPException, Form, UploadFile, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from database.db import get_db
 from app.api.auth.commands.context import validate_access_token_by_id, get_access_token
-from app.api.incidents.commands.incident_crud import create_incident, get_incidents, get_incident_by_id, get_all_incident_types
+from app.api.incidents.commands.incident_crud import create_incident, get_incidents, get_incident_by_id, get_all_incident_types, get_user_incident
 from typing import List
-from app.api.incidents.schemas.response import IncidentResponse, IncidentTypeResponse
+from app.api.incidents.schemas.response import IncidentResponse, IncidentTypeResponse, UserIncidentResponse
 
 
 logger = logging.getLogger(__name__)
@@ -87,3 +87,22 @@ async def get_incident(incident_id: int, db: AsyncSession = Depends(get_db)):
 )
 async def read_all_incident_types(db: AsyncSession = Depends(get_db)):
     return await get_all_incident_types(db=db)
+
+@router.get(
+    "/user/my-incident", 
+    summary="Получить все происшествие user",
+    response_model=List[UserIncidentResponse]
+)
+async def read_incident_user(request: Request, db: AsyncSession = Depends(get_db)):
+    try: 
+        access_token = await get_access_token(request)
+        user_id_str = await validate_access_token_by_id(access_token)
+        try:
+            user_id = int(user_id_str)
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid user_id format in token")
+        return await get_user_incident(user_id=user_id, db=db)
+    except ValueError as e:  
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")

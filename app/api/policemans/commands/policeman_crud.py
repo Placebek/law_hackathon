@@ -1,7 +1,7 @@
 import logging 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from model.model import Policeman, Station
+from model.model import Policeman, Station, Rank
 from app.api.policemans.schemas.response import PolicemansResponse, StationResponse, PolicemanResponse
 from sqlalchemy.orm import joinedload
 
@@ -57,3 +57,32 @@ async def get_policeman_by_id(policeman_id: int, db: AsyncSession) -> PolicemanR
     
     logger.info(f"Найден полицейский с ID {policeman_id}")
     return PolicemanResponse.model_validate(policeman)
+
+async def delete_policeman(
+    policeman_id: int,
+    db: AsyncSession
+) -> None:
+    logger.debug(f"Attempting to delete policeman with id={policeman_id}")
+    query = select(Policeman).where(Policeman.id == policeman_id)
+    result = await db.execute(query)
+    policeman = result.scalar_one_or_none()
+
+    if not policeman:
+        logger.info(f"Policeman with id={policeman_id} not found")
+        raise ValueError(f"Policeman with id {policeman_id} not found")
+    
+    await db.delete(policeman)
+    await db.commit()
+
+    logger.info(f"Policeman with id={policeman_id} successfully deleted")
+
+async def get_all_ranks_types(db: AsyncSession):
+    stmt = await db.execute(select(Rank))
+    ranks = stmt.scalars().all()
+
+    if not ranks:
+        logger.info("Not found")
+        return []
+    logger.info(f"{len(ranks)}")
+    return ranks
+    
