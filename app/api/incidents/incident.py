@@ -1,3 +1,4 @@
+import logging
 from fastapi import Depends, APIRouter, HTTPException, Form, UploadFile, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from database.db import get_db
@@ -6,6 +7,12 @@ from app.api.incidents.commands.incident_crud import create_incident, get_incide
 from typing import List
 from app.api.incidents.schemas.response import IncidentResponse, IncidentTypeResponse
 
+
+logger = logging.getLogger(__name__)
+handler = logging.StreamHandler()
+handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
+logger.addHandler(handler)
+logger.setLevel(logging.INFO)
 
 router = APIRouter()
 
@@ -44,6 +51,7 @@ async def create_new_incident(
     except ValueError as e:  
         raise HTTPException(status_code=401, detail="Invalid or expired token")
     except Exception as e:
+        logger.error(f"Error creating incident: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")  
     
 @router.get(
