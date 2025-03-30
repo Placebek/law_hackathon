@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 import '../../utils/constants.dart';
 
@@ -25,7 +26,7 @@ class ApiService {
       headers: {'Authorization': 'Bearer $token'},
     );
     if (response.statusCode == 200) {
-      return jsonDecode(response.body);
+      return jsonDecode(utf8.decode(response.bodyBytes));
     } else {
       throw Exception('Ошибка: ${response.body}');
     }
@@ -46,6 +47,57 @@ class ApiService {
       headers: headers,
       body: jsonEncode(body),
     );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Ошибка: ${response.body}');
+    }
+  }
+
+  Future<Map<String, dynamic>> postFormUrlEncoded(
+    String endpoint,
+    Map<String, String> body,
+    String token,
+  ) async {
+    final headers = {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'Authorization': 'Bearer $token',
+    };
+
+    final response = await http.post(
+      Uri.parse('$BASE_URL$endpoint'),
+      headers: headers,
+      body: body,
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Ошибка: ${response.body}');
+    }
+  }
+
+  Future<Map<String, dynamic>> postMultipart(
+    String endpoint,
+    Map<String, String> body,
+    File? photo,
+    String token,
+  ) async {
+    var request = http.MultipartRequest('POST', Uri.parse('$BASE_URL$endpoint'))
+      ..headers.addAll({
+        'Authorization': 'Bearer $token',
+      })
+      ..fields.addAll(body);
+
+    if (photo != null) {
+      request.files.add(
+        await http.MultipartFile.fromPath('photo', photo.path),
+      );
+    }
+
+    var streamedResponse = await request.send();
+    var response = await http.Response.fromStream(streamedResponse);
 
     if (response.statusCode == 200) {
       return jsonDecode(response.body);

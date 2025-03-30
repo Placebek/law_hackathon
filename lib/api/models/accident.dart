@@ -1,9 +1,11 @@
+import 'dart:io';
+
 class Accident {
   final String title;
   final String description;
   final int incidentTypeId;
-  final String photo;
-  final String video;
+  final File? photo;
+  final String? video;
 
   Accident({
     required this.title,
@@ -30,6 +32,14 @@ class Accident {
       'incident_type_id': incidentTypeId,
       'photo': photo,
       'video': video,
+    };
+  }
+
+  Map<String, String> toFormData() {
+    return {
+      "title": title,
+      "description": description,
+      "incident_type_id": incidentTypeId.toString(),
     };
   }
 }

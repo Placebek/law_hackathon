@@ -8,6 +8,7 @@ import 'call_page.dart';
 import '../emergency_button.dart';
 import 'statement_page.dart';
 import 'accident_page.dart';
+import '../api/token_manager.dart';
 
 void main() {
   runApp(
@@ -24,11 +25,18 @@ class MainPage extends StatefulWidget {
 
 class _MainPageState extends State<MainPage> {
   String? _residentAddress;
+  String? _token;
 
   @override
   void initState() {
     super.initState();
-    _getResidentLocationAndAddress();
+    _loadTokenAndData(); // Единственный вызов для загрузки токена и адреса
+  }
+
+  Future<void> _loadTokenAndData() async {
+    _token = await TokenManager.getToken();
+    await _getResidentLocationAndAddress();
+    setState(() {}); // Обновляем UI после загрузки данных
   }
 
   Future<void> _getResidentLocationAndAddress() async {
@@ -170,11 +178,22 @@ class _MainPageState extends State<MainPage> {
                             Color(0xFF42A5F5)
                           ],
                           onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => ChatPage()),
-                            );
+                            if (_token != null) {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      ChatPage(token: _token!),
+                                ),
+                              );
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                      'Токен отсутствует. Пожалуйста, войдите'),
+                                ),
+                              );
+                            }
                           },
                         ),
                         SizedBox(width: 20),
@@ -244,7 +263,6 @@ class _MainPageState extends State<MainPage> {
                 ),
               ),
             ),
-            // Кнопки внизу с новым дизайном
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Row(
@@ -257,19 +275,16 @@ class _MainPageState extends State<MainPage> {
                       padding:
                           EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
+                          borderRadius: BorderRadius.circular(12)),
                       backgroundColor: Colors.white,
                       foregroundColor: Color(0xFF1E88E5),
-                      elevation: 2, // Легкая тень
+                      elevation: 2,
                       shadowColor: Colors.grey.withOpacity(0.3),
                     ),
                     child: Text(
                       'Заявление',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
                   ),
                   OutlinedButton(
@@ -279,8 +294,7 @@ class _MainPageState extends State<MainPage> {
                       padding:
                           EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
+                          borderRadius: BorderRadius.circular(12)),
                       backgroundColor: Colors.white,
                       foregroundColor: Color(0xFF4CAF50),
                       elevation: 2,
@@ -288,10 +302,8 @@ class _MainPageState extends State<MainPage> {
                     ),
                     child: Text(
                       'Происшествие',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
                   ),
                 ],
@@ -333,11 +345,7 @@ class _MainPageState extends State<MainPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              icon,
-              color: Colors.white,
-              size: 30,
-            ),
+            Icon(icon, color: Colors.white, size: 30),
             SizedBox(height: 5),
             Text(
               label,

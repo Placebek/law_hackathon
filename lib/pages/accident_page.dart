@@ -1,4 +1,8 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:law_code_flutter/api/models/accident.dart';
 import '/api/models/accident_type.dart';
 import 'package:provider/provider.dart';
@@ -16,6 +20,9 @@ class _AccidentPageState extends State<AccidentPage> {
   final TextEditingController _photoController = TextEditingController();
   final TextEditingController _videoController = TextEditingController();
 
+  final ImagePicker _picker = ImagePicker();
+  File? _photoFile;
+
   final AccidentService _accidentService = AccidentService();
   int? _selectedIncidentType;
   List<AccidentType> _incidentTypes = [];
@@ -26,11 +33,24 @@ class _AccidentPageState extends State<AccidentPage> {
     _loadIncidentTypes();
   }
 
+  Future<void> _takePhoto() async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? pickedFile =
+        await picker.pickImage(source: ImageSource.camera);
+
+    if (pickedFile != null) {
+      setState(() {
+        _photoFile = File(pickedFile.path);
+      });
+    }
+  }
+
   Future<void> _loadIncidentTypes() async {
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       List<dynamic> response =
           await _accidentService.getAccidentTypes(authProvider.token!);
+      print("Типы происшествий: $response");
       setState(() {
         _incidentTypes = response.map((e) => AccidentType.fromJson(e)).toList();
       });
@@ -40,20 +60,14 @@ class _AccidentPageState extends State<AccidentPage> {
   }
 
   Future<void> _submitAccident() async {
-    if (_selectedIncidentType == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Пожалуйста, выберите тип происшествия")),
-      );
-      return;
-    }
-
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
+    // Создаем объект Accident
     Accident newAccident = Accident(
       title: _titleController.text,
       description: _descriptionController.text,
       incidentTypeId: _selectedIncidentType!,
-      photo: _photoController.text,
+      photo: _photoFile,
       video: _videoController.text,
     );
 
@@ -64,81 +78,68 @@ class _AccidentPageState extends State<AccidentPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Происшествие отправлено успешно!")),
       );
-      // Очистка формы после успешной отправки
-      _titleController.clear();
-      _descriptionController.clear();
-      _photoController.clear();
-      _videoController.clear();
-      setState(() {
-        _selectedIncidentType = null;
-      });
     } catch (e) {
       print("Ошибка при отправке: $e");
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Ошибка при отправке: $e")),
+        SnackBar(content: Text("Ошибка при отправке!")),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            TextField(
-              controller: _titleController,
-              decoration: InputDecoration(labelText: 'Название'),
+    return Container(
+      height: MediaQuery.of(context).size.height,
+      padding: EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          TextField(
+            controller: _titleController,
+            decoration: InputDecoration(labelText: 'Название'),
+          ),
+          SizedBox(height: 10),
+          TextField(
+            controller: _descriptionController,
+            decoration: InputDecoration(labelText: 'Описание'),
+            maxLines: 5,
+          ),
+          SizedBox(height: 10),
+          DropdownButtonFormField<int>(
+            value: _selectedIncidentType,
+            decoration: InputDecoration(labelText: 'Тип происшествия'),
+            items: _incidentTypes
+                .map((type) =>
+                    DropdownMenuItem(value: type.id, child: Text(type.name)))
+                .toList(),
+            onChanged: (value) {
+              setState(() {
+                _selectedIncidentType = value!;
+              });
+            },
+          ),
+          SizedBox(height: 10),
+          ElevatedButton(
+            onPressed: _takePhoto,
+            child: Text("Сделать фото"),
+          ),
+          if (_photoFile != null)
+            Padding(
+              padding: EdgeInsets.symmetric(vertical: 10),
+              child: Text("Фото прикреплено"),
             ),
-            SizedBox(height: 10),
-            TextField(
-              controller: _descriptionController,
-              decoration: InputDecoration(labelText: 'Описание'),
-              maxLines: 5,
-            ),
-            SizedBox(height: 10),
-            DropdownButtonFormField<int>(
-              value: _selectedIncidentType,
-              decoration: InputDecoration(labelText: 'Тип происшествия'),
-              items: _incidentTypes
-                  .map((type) =>
-                      DropdownMenuItem(value: type.id, child: Text(type.name)))
-                  .toList(),
-              onChanged: (value) {
-                setState(() {
-                  _selectedIncidentType = value;
-                });
-              },
-            ),
-            SizedBox(height: 10),
-            TextField(
-              controller: _photoController,
-              decoration: InputDecoration(labelText: 'Фото (URL)'),
-            ),
-            SizedBox(height: 10),
-            TextField(
-              controller: _videoController,
-              decoration: InputDecoration(labelText: 'Видео (URL)'),
-            ),
-            SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _submitAccident,
-              child: Text('Отправить'),
-            ),
-          ],
-        ),
+          SizedBox(height: 10),
+          TextField(
+            controller: _videoController,
+            decoration: InputDecoration(labelText: 'Видео (URL)'),
+          ),
+          SizedBox(height: 20),
+          ElevatedButton(
+            onPressed: _submitAccident,
+            child: Text('Отправить'),
+          ),
+        ],
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    _titleController.dispose();
-    _descriptionController.dispose();
-    _photoController.dispose();
-    _videoController.dispose();
-    super.dispose();
   }
 }

@@ -11,8 +11,9 @@ class AccidentService {
 
   Future<Map<String, dynamic>> addAccident(
       Accident accident, String token) async {
-    final Map<String, dynamic> body = accident.toJson();
-    return _apiService.post(
-        '/v1/accidents/add', body); // Предполагаемый эндпоинт
+    Map<String, String> accidentFormData = accident.toFormData();
+
+    return _apiService.postMultipart(
+        '/v1/add-incident', accidentFormData, accident.photo, token);
   }
 }

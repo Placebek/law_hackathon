@@ -6,9 +6,6 @@ class ChatWebSocketServiceById {
   final IOWebSocketChannel _channel;
   Function(Map<String, dynamic>)? _onNewMessage;
 
-  /// Создаёт WebSocket-сервис для чата с конкретным [chatId].
-  /// [token] — токен аутентификации.
-  /// [chatId] — идентификатор чата.
   ChatWebSocketServiceById({
     required String token,
     required String chatId,
