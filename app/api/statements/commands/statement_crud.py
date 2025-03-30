@@ -158,3 +158,31 @@ async def get_police_statements(
 
     return statements
 
+async def update_statement_policeman_status(
+    statement_id: int,
+    db: AsyncSession
+) -> Statement:
+    logger.debug(f"Updating statement with id={statement_id} to status='Обработано'")
+    query = (
+        select(Statement)
+        .where(Statement.id == statement_id)
+        .options(
+            joinedload(Statement.user),
+            joinedload(Statement.type),
+            joinedload(Statement.policeman)
+        )
+    )
+    result = await db.execute(query)
+    statement = result.unique().scalar_one_or_none()
+
+    if not statement:
+        logger.info(f"Statement with id={statement_id} not found")
+        raise ValueError(f"Statement with id {statement_id} not found")
+    
+    statement.status = "Обработано"
+
+    await db.commit()
+    await db.refresh(statement)
+
+    logger.info(f"Statement with id={statement_id} updated to status='Обработано'")
+    return statement

@@ -2,10 +2,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import APIRouter, Depends, Request, HTTPException
 from app.api.statements.schemas.create import StatementCreate
 from app.api.statements.schemas.response import StatementsResponse, StatementResponse, StatementsStatistics, TypeResponse, UserStatementResponse, PolicemanStatementResponse
-from app.api.statements.schemas.update import StatementUpdate
+from app.api.statements.schemas.update import StatementUpdate, StatementPoliceUpdate
 from database.db import get_db
 from app.api.auth.commands.context import validate_access_token_by_id, get_access_token
-from app.api.statements.commands.statement_crud import create_statement, update_statement_policeman, get_all_statements, get_statement_by_id, get_all_types_statement, get_user_statements, get_police_statements
+from app.api.statements.commands.statement_crud import create_statement, update_statement_policeman, get_all_statements, get_statement_by_id, get_all_types_statement, get_user_statements, get_police_statements, update_statement_policeman_status
 from typing import List
 from app.api.statements.commands.stat_statistic_crud import get_statements_statistics
 
@@ -152,3 +152,26 @@ async def read_statement_user(request: Request, db: AsyncSession = Depends(get_d
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
     
+
+@router.put(
+    "/statement-update-police/{statement_id}",
+    summary="Сделать оброботанным",
+    response_description=""
+)
+async def update_statement(
+    statement_id: int,
+    request: Request,
+    db: AsyncSession = Depends(get_db)
+):
+    try:
+        access_token = await get_access_token(request)
+        police_id_str = await validate_access_token_by_id(access_token)
+        try:
+            policeman_id = int(police_id_str)
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid policeman_id format in token")
+        return await update_statement_policeman_status(statement_id=statement_id, db=db)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
