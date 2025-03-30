@@ -13,7 +13,7 @@ export const useDepartmentStore = defineStore('department', {
 
         try {
           const response = await axios.get(
-              'http://127.0.0.1:8000/v1/all_stations',
+              'http://172.20.10.2:8000/v1/all_stations',
           );
           return response.data;
 
@@ -29,7 +29,7 @@ export const useDepartmentStore = defineStore('department', {
       async getDepartmentByID(department_id) {
         try {
           const response = await axios.get(
-              `http://127.0.0.1:8000/v1/by-station-id/${department_id}`, 
+              `http://172.20.10.2:8000/v1/by-station-id/${department_id}`, 
           );
           return response.data;
 
@@ -45,7 +45,7 @@ export const useDepartmentStore = defineStore('department', {
       async updateStatement(statement_id, policeman_id) {
         try {
           const response = await axios.put(
-            `http://127.0.0.1:8000/v1/statement-update/${statement_id}`,
+            `http://172.20.10.2:8000/v1/statement-update/${statement_id}`,
             { policeman_id }
           );
           return response.data;

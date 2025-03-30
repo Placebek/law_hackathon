@@ -9,7 +9,7 @@ export const useStatementStore = defineStore('statement', {
     async getAllStatement() {
       try {
         const response = await axios.get(
-          `http://127.0.0.1:8000/v1/get-all-statements`, 
+          `http://172.20.10.2:8000/v1/get-all-statements`, 
         );
         return response.data;
 
@@ -25,7 +25,7 @@ export const useStatementStore = defineStore('statement', {
     async getStatementByID(statement_id) {
       try {
           const response = await axios.get(
-              `http://127.0.0.1:8000/v1/statement/${statement_id}`, 
+              `http://172.20.10.2:8000/v1/statement/${statement_id}`, 
           );
           return response.data;
 

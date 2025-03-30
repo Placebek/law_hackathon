@@ -63,6 +63,10 @@
               Неизвестно
             </div>
           </div>
+
+          <div class="pt-3">
+            <div class="h-[1px] bg-[#A14200] mx-auto my-4"></div>
+          </div>
         </div>
 
 

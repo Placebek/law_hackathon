@@ -8,10 +8,11 @@ export const usePolicemanStore = defineStore('policeman', {
     actions: {
         async getPolicemanByID(policeman_id) {
             try {
-                const response = await axios.get(
-                    `http://127.0.0.1:8000:8000/v1/police/${policeman_id}`, 
-                );
-                return response.data;
+              const response = await axios.get(
+                `http://172.20.10.2:8000/v1/police/${policeman_id}`, 
+              );
+              debugger
+              return response.data;
 
             } catch (error) {
                 if (error.response) {
@@ -26,7 +27,7 @@ export const usePolicemanStore = defineStore('policeman', {
             try {
               debugger
               const response = await axios.post(
-                  `http://127.0.0.1:8000/v1/police/register`, 
+                  `http://172.20.10.2:8000/v1/police/register`, 
                   payload
               );
               return response.data;

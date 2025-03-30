@@ -5,7 +5,6 @@
       Добавить нового полицейского
     </h2>
 
-    <!-- Форма с обработчиком submit -->
     <form @submit.prevent="submitForm" class="space-y-4">
       <div class="grid grid-cols-12">
         <div class="col-span-9 grid grid-rows-3 gap-4 pe-4">
@@ -115,7 +114,7 @@
         <textarea
           v-model="formData.resume"
           placeholder="Введите краткую информацию о полицейском"
-          class="w-full h-[300px] p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#15524C]"
+          class="w-full h-[200px] p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#15524C]"
         ></textarea>
       </div>
 
