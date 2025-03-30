@@ -34,15 +34,15 @@
           <div class="w-[95%] h-[1px] bg-gray-300 mx-auto my-4"></div>
         </div>
 
-
         <div 
           v-if="statements" 
           v-for="(statement, index) in statements" 
           :key="index"
           @click="goToStatementProfile(statement)"
-          class="pt-10 mx-24"
+          class="pt-10 mx-24 transition-all duration-300 ease-in-out 
+                hover:shadow-lg hover:bg-[#e3f3f1] hover:scale-[1.02] rounded-xl cursor-pointer"
         > 
-          <div class="grid grid-cols-6 gap-6">
+          <div class="grid grid-cols-6 gap-6 p-4">
             <div class="w-[70px] h-[30px] bg-[#6388A8] rounded-[5px]"></div>
 
             <div v-if="statement.user?.first_name && statement.user?.last_name">
@@ -63,12 +63,7 @@
               Неизвестно
             </div>
           </div>
-
-          <div class="pt-3">
-            <div class="h-[1px] bg-[#A14200] mx-auto my-4"></div>
-          </div>
         </div>
-
 
       </div>
 
