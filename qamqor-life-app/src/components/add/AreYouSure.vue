@@ -11,7 +11,7 @@
           Отмена
         </button>
         <button 
-            @click="appointExecuter"
+            @click="deletePoliceman"
             class="bg-[#C46412] text-white px-4 py-2 rounded-[25px] hover:bg-[#a3530f] transition"
         >
           Да
@@ -22,12 +22,43 @@
 </template>
 
 <script>
+import { usePolicemanStore } from '../../stores/policeman';
+import { useRoute } from 'vue-router'
+
+
 export default {
   emits: ["close"],
-  methods: {
-    closeModal() {
-      this.$emit("close");
+  props: {
+    policemanId: {
+      type: String,
+      required: true,
     },
+  },
+  setup (props, { emit }) {
+    const route = useRoute();
+    const policemanId = Number(route.params.id);
+
+    function closeModal() {
+      emit('close')
+    }
+
+    const deletePoliceman = async () => {
+      try {
+        const policemanStore = usePolicemanStore();
+        await policemanStore.deletePoliceman(policemanId);
+        debugger
+        console.log("Delete");
+        closeModal();
+      } catch (error) {
+        console.error("Ошибка при удалении полицейского:", error);
+      }
+    };
+
+    return {
+      deletePoliceman,
+      policemanId,
+      closeModal
+    };
   },
 };
 </script>

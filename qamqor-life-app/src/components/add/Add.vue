@@ -2,7 +2,7 @@
   <div class="bg-white p-8 rounded-2xl shadow-xl w-[70%] max-w-3xl mx-auto text-[#277D74]"
        style="height: 90vh; overflow-y: auto; position: relative;">
     <h2 class="text-2xl font-bold text-center mb-6">
-      Добавить нового полицейского
+      Добавить нового исполнителя
     </h2>
 
     <form @submit.prevent="submitForm" class="space-y-4">
@@ -19,7 +19,7 @@
             />
           </div>
           <div>
-            <label class="block text-[#15524C] mb-1">Отчество</label>
+            <label class="block text-[#15524C] mb-1">Фамилия</label>
             <input
               v-model="formData.patronymic"
               type="text"
@@ -29,7 +29,7 @@
             />
           </div>
           <div>
-            <label class="block text-[#15524C] mb-1">Фамилия</label>
+            <label class="block text-[#15524C] mb-1">Отчество</label>
             <input
               v-model="formData.lastName"
               type="text"
@@ -89,18 +89,21 @@
       <div class="grid grid-cols-2 gap-4">
         <div>
           <label class="block text-[#15524C] mb-1">Звание</label>
-          <select v-model="formData.rank" required class="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#15524C]">
+          <select v-model="formData.rank_id" required class="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#15524C]">
             <option disabled value="">Выберите ранг</option>
-            <option v-for="rank in ranks" :key="rank.id" :value="rank.name">
+            <option 
+              v-for="rank in ranksData" 
+              :key="rank.id" 
+              :value="rank.id">
               {{ rank.name }}
             </option>
           </select>
         </div>
         <div>
-          <label class="block text-[#15524C] mb-1">Станция</label>
-          <select v-model="formData.station" required class="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#15524C]">
-            <option disabled value="">Выберите станцию</option>
-            <option v-for="station in stations" :key="station.id" :value="station.station_name">
+          <label class="block text-[#15524C] mb-1">Отдел полиции</label>
+          <select v-model="formData.station_id" required class="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#15524C]">
+            <option disabled value="">Выберите отдел</option>
+            <option v-for="station in stationsData" :key="station.id" :value="station.id">
               {{ station.station_name }}
             </option>
           </select>
@@ -111,7 +114,7 @@
         <label class="block text-[#15524C] mb-1">Резюме</label>
         <textarea
           v-model="formData.resume"
-          placeholder="Введите краткую информацию о полицейском"
+          placeholder="Введите информацию об исполнителе"
           class="w-full h-[200px] p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#15524C]"
         ></textarea>
       </div>
@@ -128,7 +131,7 @@
           type="submit"
           class="px-4 py-2 bg-[#277D74] text-white rounded-lg hover:bg-[#557A95] transition"
         >
-          Сохранить
+          Добавить
         </button>
       </div>
     </form>
@@ -139,8 +142,13 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { usePolicemanStore } from '../../stores/policeman'
+import { useDepartmentStore } from '../../stores/department'
+import { useRankStore } from '../../stores/rank'
 
 const emit = defineEmits(['close', 'submit'])
+
+const stationsData = ref([])
+const ranksData = ref([])
 
 const formData = ref({
   firstName: '',
@@ -150,26 +158,30 @@ const formData = ref({
   phone: '',
   birthDate: '',
   photo: '',
-  rank: '',    // Значение будет именем ранга, выбранным из списка
-  station: '', // Значение будет названием станции
   resume: '',
+  rank_id: '',
+  station_id: '',
 })
 
-// Пример опций для рангов и станций.
-// В реальном приложении вы можете получить эти данные из API или из стора.
-const ranks = ref([
-  { id: 1, name: 'Сержант' },
-  { id: 2, name: 'Лейтенант' },
-  { id: 3, name: 'Капитан' },
-  { id: 4, name: 'Полковник' },
-]);
+const getStations = async () => {
+  try {
+    const stationStore = useDepartmentStore()
+    const stations_result = await stationStore.allDepartments()
+    stationsData.value = stations_result
+  } catch (err) {
+    console.error("Ошибка при получении департаментов:", err)
+  }
+}
 
-const stations = ref([
-  { id: 1, station_name: 'Центральная станция' },
-  { id: 2, station_name: 'Северная станция' },
-  { id: 3, station_name: 'Южная станция' },
-  { id: 4, station_name: 'Восточная станция' },
-]);
+const getRanks = async () => {
+  try {
+    const rankStore = useRankStore()
+    const ranks = await rankStore.allRanks()
+    ranksData.value = ranks
+  } catch (err) {
+    console.error("Ошибка при получении рангов:", err)
+  }
+}
 
 function handleFileUpload(event) {
   const file = event.target.files[0]
@@ -187,27 +199,40 @@ function closeModal() {
 }
 
 async function submitForm() {
-  // Формируем объект payload согласно модели AdminCreatePolice
   const payload = {
     first_name: formData.value.firstName,
     last_name: formData.value.lastName,
     email: formData.value.email,
     phone_number: formData.value.phone,
-    rank_name: formData.value.rank,        // Здесь передаётся выбранное название ранга
-    birth_day: formData.value.birthDate,     // Формат "YYYY-MM-DD"
-    station_name: formData.value.station,    // Здесь передаётся выбранное название станции
+    birth_day: formData.value.birthDate,
     resume: formData.value.resume,
-    // Если API принимает фото, можно добавить formData.value.photo
+    station_id: formData.value.station_id,
+    rank_id: formData.value.rank_id,
   }
 
   try {
     const policemanStore = usePolicemanStore()
     const result = await policemanStore.createPoliceman(payload)
     console.log('Новый полицейский успешно создан:', result)
-    emit('submit', payload)
-    closeModal()
+    if (result.error) {
+      alert("Неправильно введенные данные, попробуйте снова")
+    } 
+    else {
+      alert("Полицейский успешно добавлен!")
+      emit('submit', payload)
+      closeModal()
+    }
+    
   } catch (error) {
-    console.error("Ошибка при создании полицейского:", error)
+    debugger
+    console.log("Ошибка при создании полицейского:", error)
+    
   }
 }
+
+onMounted(() => {
+  getStations()
+  getRanks()
+})
+
 </script>

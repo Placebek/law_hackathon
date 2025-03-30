@@ -3,7 +3,7 @@
     <div class="flex items-center justify-between mb-4">
       <div>
         <h2 class="text-xl text-[#377973] font-bold">Статистика</h2>
-        <p class="text-sm text-gray-400">Previous day</p>
+        <p class="text-sm text-gray-400">Поданные заявления за день</p>
       </div>
       <div class="text-[#BA6F2E] px-3 py-1 text-sm rounded-full flex items-center gap-2">
         <svg

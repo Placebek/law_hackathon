@@ -1,10 +1,11 @@
 <template>
   <div class="bg-[#3B938A] text-white p-8">
-      <div class="text-[30px] mb-8 flex justify-center">
+      <div class="text-[30px] mb-10 flex justify-center flex-col items-center">
         <div class="">
-          <img src="../../assets/img/logo2.png" alt="" class="w-[95px] h-[80px]">
+          <img src="../../assets/img/logo2.png" alt="" class="w-[90px] h-[75px]">
         </div>
-        <div>
+        <div class="text-glow">
+          Qamqor Life
         </div>
       </div>
 
@@ -14,7 +15,7 @@
             @click="openModal"
             class="bg-[#F3FFDE] text-[#6388A8] cursor-pointer px-4 py-3 rounded-[25px] transition-all duration-200 ease-in-out"
           >
-            Добавить нового сотрудника
+            Добавить нового исполнителя
           </button>
 
           <div
@@ -73,15 +74,14 @@ function closeModal() {
   isModalOpen.value = false
 }
 
-const formData = ref({
-  name: '',
-  position: '',
-});
-
-
-function submitForm() {
-  console.log('Данные формы:', formData.value);
-  closeModal();
-}
-
 </script>
+
+
+<style>
+.text-glow {
+  font-size: 24px;
+  font-weight: bold;
+  color: #fff; 
+  text-shadow: 0 0 80px #8ee7de, 0 0 50px #8ee7de, 0 0 50px #8ee7de;
+}
+</style>

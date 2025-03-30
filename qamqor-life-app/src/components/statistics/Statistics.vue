@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-custom-gradient flex">
+  <div class=" flex">
     <Navbar />
     <div class="w-full px-8 pt-8">
       <div class="w-full bg-white rounded-t-[25px] p-8 text-black ">
@@ -22,11 +22,11 @@
         <div class="pt-16 mx-24">
           <div class="grid grid-cols-6 gap-6">
             <div></div>
-            <div>full name</div>
-            <div>Заявленный</div>
+            <div>Обращающееся лицо</div>
+            <div>Заинтересованное лицо</div>
             <div>Время заявки</div>
-            <div>application time</div>
-            <div>raised matter</div>
+            <div>Рассматриваемое дело</div>
+            <div>Сотрудник правоохранительных органов</div>
           </div>
         </div>
 
@@ -49,7 +49,7 @@
               {{ statement.user.first_name }} {{ statement.user.last_name }}
             </div>
             <div v-else>
-              Неизвестно
+              Аноним
             </div>
 
             <div>{{ statement.recipient }}</div>
@@ -60,7 +60,7 @@
               {{ statement.policeman.first_name }} {{ statement.policeman.last_name }}
             </div>
             <div v-else>
-              Неизвестно
+              Не утверждён
             </div>
           </div>
         </div>

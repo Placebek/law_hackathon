@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-custom-gradient flex">
+  <div class="flex">
     <Navbar />
 
     <div class="w-full">
@@ -10,7 +10,7 @@
           </span>
           <input
             type="text"
-            placeholder="search"
+            placeholder="поиск"
             class="w-full h-[55px] ps-8 bg-white border-x-[3px] border-b-[3px] rounded-b-[25px] outline-none text-[#6388A8] shadow-sm"
             style="box-shadow: 0 4px 10px #BA6F2E;"
             />

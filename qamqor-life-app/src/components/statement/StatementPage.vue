@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-custom-gradient h-full flex justify-start">
+  <div class=" h-full flex justify-start">
     <Navbar />
 
     <div class="w-full h-full pt-8 pl-8 pr-8">
@@ -33,7 +33,7 @@
             <p class="text-base mt-4 leading-8">
               <span class="font-semibold">Начальнику отдела полиции</span> №557<br>
               <span class="font-semibold">Управления полиции города</span> Караганды<br>
-              <div v-if="!statement.anonymous || statement.anonymous === false">
+              <div v-if="statement.anonymous === false">
                 <span class="font-semibold">ИИН:</span> {{ statement.user.uin }}<br>
                 <span class="font-semibold">Дата рождения:</span> {{ statement.user.birth_day }}<br>
                 <span class="font-semibold">Телефон номера:</span> {{ statement.user.phone_number }}<br>
@@ -41,11 +41,11 @@
                 <span class="font-semibold">Адрес проживания:</span> Караганда, Строителей 3/2<br>
               </div>
               <div v-else>
-                <span class="font-semibold">ИИН:</span> Неизвестно<br>
-                <span class="font-semibold">Дата рождения:</span> Неизвестно<br>
-                <span class="font-semibold">Телефон номера:</span> Неизвестно<br>
-                <span class="font-semibold">Электронная почта:</span> Неизвестно<br>
-                <span class="font-semibold">Адрес проживания:</span> Неизвестно<br>
+                <span class="font-semibold">ИИН:</span> Аноним<br>
+                <span class="font-semibold">Дата рождения:</span> Аноним<br>
+                <span class="font-semibold">Телефон номера:</span> Аноним<br>
+                <span class="font-semibold">Электронная почта:</span> Аноним<br>
+                <span class="font-semibold">Адрес проживания:</span> Аноним<br>
               </div>
             </p>
           </div>
@@ -56,13 +56,15 @@
           </div>
           <div class="px-10 leading-8">
             <div class="pt-4 indent-10">
-              <div v-if="!statement.anonymous || statement.anonymous === false">
+              <div v-if="statement.anonymous === false">
                 <p>
                   Я, {{ statement.user.first_name}} {{ statement.user.last_name}}, проживающий по адресу: г. Караганда, ул. Сторителей 3/2, д. 45, кв. 12, паспорт №12345678, выдан 15.05.2015 г., настоящим сообщаю о факте шантажа в мой адрес.
                 </p>
               </div>    
               <div v-else>
-                Я бы хотел(-а) скрыть свой личные данные
+                <p>
+                  Я бы хотел(-а) скрыть свой личные данные
+                </p>
               </div>
               <p>
                 Обстоятельства дела:

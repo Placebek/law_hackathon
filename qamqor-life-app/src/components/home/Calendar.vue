@@ -54,14 +54,14 @@ const currentMonthName = computed(() =>
 );
 
 const formattedDate = computed(() => {
-  return localDate.value.toLocaleDateString("en-US", {
+  return localDate.value.toLocaleDateString("ru-RU", {
     day: "numeric",
     month: "long",
     year: "numeric",
   });
 });
 
-const daysOfWeek = ["S", "M", "T", "W", "T", "F", "S"];
+const daysOfWeek = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
 
 const daysInMonth = computed(() => {
   const days = new Date(currentYear.value, currentMonth.value + 1, 0).getDate();

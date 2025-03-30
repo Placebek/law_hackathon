@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-custom-gradient h-full flex justify-start">
+  <div class=" h-full flex justify-start">
     <Navbar />
 
     <div class="w-full h-full pt-8 pl-8 pr-8">
@@ -97,41 +97,33 @@ export default {
     }
 
     const isModalOpen = ref(false);
-
-    const openModal = () => {
-      isModalOpen.value = true;
-    };
-
-    const closeModal = () => {
-      isModalOpen.value = false;
-    };
+    const openModal = () => { isModalOpen.value = true; };
+    const closeModal = () => { isModalOpen.value = false; };
 
     const policemanId = route.params.id;
 
     const getPolicemanDate = async () => {
-        try {
-            const policemanStore = usePolicemanStore();
-            const policeman_result = await policemanStore.getPolicemanByID(policemanId);
+      try {
+        const policemanStore = usePolicemanStore();
+        const policeman_result = await policemanStore.getPolicemanByID(policemanId);
 
-            const dateStr = policeman_result.birth_day;
-            const dateObj = new Date(dateStr);
+        const dateStr = policeman_result.birth_day;
+        const dateObj = new Date(dateStr);
 
-            const day = ("0" + dateObj.getDate()).slice(-2);
-            const month = ("0" + (dateObj.getMonth() + 1)).slice(-2);
-            const year = dateObj.getFullYear();
+        const day = ("0" + dateObj.getDate()).slice(-2);
+        const month = ("0" + (dateObj.getMonth() + 1)).slice(-2);
+        const year = dateObj.getFullYear();
 
-            policeman_result.birth_day = `${day}.${month}.${year}`;
+        policeman_result.birth_day = `${day}.${month}.${year}`;
 
-            policeman.value = policeman_result;
-            debugger
-        } catch (err) {
-            console.error("Ошибка при получении продуктов:", err);
-            this.error = "Не удалось загрузить продукты";
-        }
+        policeman.value = policeman_result;
+      } catch (err) {
+        console.error("Ошибка при получении данных:", err);
+      }
     };
 
     onMounted(() => {
-      getPolicemanDate()
+      getPolicemanDate();
     });
 
     return {
