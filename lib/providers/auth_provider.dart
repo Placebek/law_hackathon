@@ -176,7 +176,9 @@ class AuthProvider with ChangeNotifier {
 
   void sendChatMessage(String message, String chatId) {
     if (_chatWebSocketServiceById != null) {
-      _chatWebSocketServiceById!.sendMessage(message);
+      _chatWebSocketServiceById!.sendMessage(
+        '{"event": "message", "data": ${message}}',
+      );
       if (!_messagesByChatId.containsKey(chatId)) {
         _messagesByChatId[chatId] = [];
       }

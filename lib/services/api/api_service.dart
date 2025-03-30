@@ -25,7 +25,20 @@ class ApiService {
       headers: {'Authorization': 'Bearer $token'},
     );
     if (response.statusCode == 200) {
-      return jsonDecode(response.body);
+      print('Получен ответ: ${response.body}');
+      return jsonDecode(utf8.decode(response.bodyBytes));
+    } else {
+      throw Exception('Ошибка: ${response.body}');
+    }
+  }
+
+  Future<Map<String, dynamic>> getOne(String endpoint, String token) async {
+    final response = await http.get(
+      Uri.parse('$BASE_URL$endpoint'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    if (response.statusCode == 200) {
+      return jsonDecode(utf8.decode(response.bodyBytes));
     } else {
       throw Exception('Ошибка: ${response.body}');
     }

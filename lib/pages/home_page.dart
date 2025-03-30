@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:law_hackathon_flutter/pages/police_accident_page.dart';
+import 'package:law_hackathon_flutter/pages/police_statement_page.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../services/api/case_service.dart';
@@ -97,7 +99,7 @@ class _HomePageState extends State<HomePage>
               unselectedLabelColor: Colors.white70,
               indicatorColor: Colors.white,
               tabs: [
-                Tab(text: 'Дела'),
+                Tab(text: 'Происшествия'),
                 Tab(text: 'Заявления'),
                 Tab(text: 'Сообщения'),
               ],
@@ -118,8 +120,8 @@ class _HomePageState extends State<HomePage>
                   : TabBarView(
                     controller: _tabController,
                     children: [
-                      _buildList(_cases, 'Дел нет'),
-                      _buildList(_reports, 'Заявлений нет'),
+                      AccidentsPage(),
+                      StatementsPage(),
                       _buildSenderList(),
                     ],
                   ),
