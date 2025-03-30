@@ -43,4 +43,27 @@ class ApiService {
       throw Exception('Ошибка: ${response.body}');
     }
   }
+
+  Future<Map<String, dynamic>> postToken(
+    String endpoint,
+    Map<String, dynamic> body,
+    String token, // Добавили опциональный токен
+  ) async {
+    final headers = {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token', // Добавляем токен, если есть
+    };
+
+    final response = await http.post(
+      Uri.parse('$BASE_URL$endpoint'),
+      headers: headers,
+      body: jsonEncode(body),
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Ошибка: ${response.body}');
+    }
+  }
 }

@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:law_hackathon_flutter/notification/notification_service.dart';
 import 'package:provider/provider.dart';
 import 'providers/auth_provider.dart';
 import 'pages/login_page.dart';
 import 'pages/home_page.dart';
 
 void main() {
+  NotificationService().init();
   runApp(
     ChangeNotifierProvider(
       create: (_) => AuthProvider(),

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:web_socket_channel/io.dart';
 import '../../utils/constants.dart';
+import '../../notification/notification_service.dart';
 
 class ChatWebSocketService {
   final IOWebSocketChannel channel;
@@ -14,6 +15,7 @@ class ChatWebSocketService {
     print('Chat WebSocket подключён');
     channel.stream.listen(
       (message) {
+        print('Received messssssage: $message');
         final data = jsonDecode(message as String);
         switch (data['event']) {
           case 'incoming_call':
@@ -21,9 +23,25 @@ class ChatWebSocketService {
             break;
           case 'new_message':
             _onNewMessage?.call(data['data']);
+            final notificationService = NotificationService();
+            notificationService.showNotification(
+              id: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+              title: 'Новое сообщение',
+              body: data['data']['content'],
+            );
             break;
           case 'auth_success':
             print('Аутентификация успешна: ${data['data']}');
+            break;
+          case 'chat_messages':
+            print('Получена история сообщений: ${data['data']}');
+            for (var msg in data['data']) {
+              _onNewMessage?.call({
+                'content': msg['content'],
+                'fromUserId': msg['sender_id'],
+                'role': msg['role'],
+              });
+            }
             break;
           default:
             print('Неизвестное событие в Chat WebSocket: ${data['event']}');
@@ -34,14 +52,6 @@ class ChatWebSocketService {
     );
   }
 
-  void authenticate(String token) {
-    final data = {
-      'event': 'auth',
-      'data': {'token': token},
-    };
-    channel.sink.add(jsonEncode(data));
-  }
-
   void onIncomingCall(Function(Map<String, dynamic>) callback) {
     _onIncomingCall = callback;
   }
@@ -50,10 +60,10 @@ class ChatWebSocketService {
     _onNewMessage = callback;
   }
 
-  void makeCall(String toUserId, String fromUserId) {
+  void makeCall(String toUserId) {
     final data = {
       'event': 'call',
-      'data': {'toUserId': toUserId, 'fromUserId': fromUserId},
+      'data': {'toUserId': toUserId},
     };
     channel.sink.add(jsonEncode(data));
   }
@@ -64,6 +74,7 @@ class ChatWebSocketService {
       'data': {'toUserId': toUserId, 'text': text},
     };
     channel.sink.add(jsonEncode(data));
+    print('Sent message: $data');
   }
 
   void disconnect() {
