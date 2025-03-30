@@ -34,6 +34,7 @@ class StatementsResponse(BaseModel):
     type: Optional[TypeResponse] = None
     user: Optional[UserResponse] = None
     policeman: Optional[PolicemanResponse] = None
+    status: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -72,6 +73,7 @@ class StatementResponse(BaseModel):
     type: Optional[TypeResponse] = None
     user: Optional[User] = None
     policeman: Optional[Policeman] = None
+    status: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -79,3 +81,25 @@ class StatementResponse(BaseModel):
 class StatementsStatistics(BaseModel):
     by_type: Dict[int, int]  
     by_date: Dict[str, int]
+
+
+class UserStatementResponse(BaseModel):
+    id: int
+    recipient: Optional[str] = None
+    text: Optional[str] = None
+    created_at: Optional[datetime] = None
+    anonymous: Optional[bool] = None
+    type: Optional[TypeResponse] = None
+    policeman: Optional[Policeman] = None
+    status: Optional[str] = None
+
+
+class PolicemanStatementResponse(BaseModel):
+    id: int
+    recipient: Optional[str] = None
+    text: Optional[str] = None
+    created_at: Optional[datetime] = None
+    anonymous: Optional[bool] = None
+    type: Optional[TypeResponse] = None
+    status: Optional[str] = None
+    user: Optional[User] = None

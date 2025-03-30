@@ -88,6 +88,7 @@ class Statement(Base):
     recipient = Column(String(255), default="", nullable=True)
     text = Column(Text, default="", nullable=True)
     anonymous = Column(Boolean, default=False)
+    status = Column(String(100), default="в обработке")
 
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=True)
 

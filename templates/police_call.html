@@ -21,14 +21,12 @@
                 });
                 ws = new WebSocket("ws://localhost:8000/v1/ws/call");
 
-                // Захват аудио
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 stream.getTracks().forEach(track => {
                     pc.addTrack(track, stream);
                     console.log("Police: Added track", track);
                 });
 
-                // Логирование ICE-кандидатов
                 pc.onicecandidate = event => {
                     if (event.candidate) {
                         ws.send(JSON.stringify({ "ice": event.candidate.toJSON() }));
@@ -38,16 +36,21 @@
                     }
                 };
 
-                // Логирование состояния соединения
                 pc.onconnectionstatechange = () => {
                     console.log("Police: Connection state:", pc.connectionState);
+                    if (pc.connectionState === "connected") {
+                        document.getElementById("status").textContent = "Connected!";
+                    }
                 };
 
-                // Воспроизведение удалённого звука
                 pc.ontrack = event => {
                     const audio = document.getElementById("remoteAudio");
                     audio.srcObject = event.streams[0];
                     console.log("Police: Received remote track", event.streams[0]);
+                };
+
+                ws.onopen = () => {
+                    console.log("Police: WebSocket opened");
                 };
 
                 ws.onmessage = async (event) => {
@@ -67,14 +70,16 @@
                         console.log("Police: Added ICE candidate", data.ice);
                     } else if (data.error) {
                         document.getElementById("status").textContent = "Error: " + data.error;
-                        ws.close();
+                        endCall();
                     }
                 };
 
+                ws.onclose = () => console.log("Police: WebSocket closed");
                 ws.onerror = (error) => console.error("Police: WebSocket error", error);
             } catch (e) {
                 console.error("Police: Error in startCall", e);
                 document.getElementById("status").textContent = "Error: " + e.message;
+                endCall();
             }
         }
 

@@ -55,6 +55,7 @@ async def update_statement_policeman(
         raise ValueError(f"Statement with id {statement_id} not found")
     
     statement.policeman_id = policeman_id
+    statement.status = "назначен исполнитель"
 
     await db.commit()
     await db.refresh(statement)
@@ -108,3 +109,52 @@ async def get_all_types_statement(db: AsyncSession):
         return []
     logger.info(f"{len(types)}")
     return types
+
+
+async def get_user_statements(
+    user_id: int,
+    db: AsyncSession
+) -> list[Statement]:
+    logger.debug(f"Fetching statements for user_id={user_id}")
+
+    query = (
+        select(Statement)
+        .where(Statement.user_id == user_id)
+        .options(joinedload(Statement.type),
+                 joinedload(Statement.policeman)
+        )
+    )
+    result = await db.execute(query)
+    statements = result.unique().scalars().all()
+
+    if not statements:
+        logger.info(f"No statements found for user_id={user_id}")
+    else:
+        logger.info(f"Found {len(statements)} statements for user_id={user_id}")
+
+    return statements
+
+
+async def get_police_statements(
+    policeman_id: int,
+    db: AsyncSession
+) -> list[Statement]:
+    logger.debug(f"Fetching statements for user_id={policeman_id}")
+
+    query = (
+        select(Statement)
+        .where(Statement.policeman_id == policeman_id)
+        .options(joinedload(Statement.type),
+                 joinedload(Statement.user)
+        )
+    )
+    result = await db.execute(query)
+    statements = result.unique().scalars().all()
+
+    if not statements:
+        logger.info(f"No statements found for user_id={policeman_id}")
+    else:
+        logger.info(f"Found {len(statements)} statements for user_id={policeman_id}")
+
+    return statements
+
