@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Call Interface</title>
+</head>
+<body>
+    <h1 id="role-title">Call Interface</h1>
+    <button id="startCall">Start Call</button>
+    <button id="endCall">End Call</button>
+    <audio id="remoteAudio" autoplay></audio>
+    <p id="status">Waiting...</p>
+
+    <script>
+        let pc;
+        let ws;
+        let role = prompt("Enter role: user or police");
+        let pendingICE = [];
+
+        document.getElementById("role-title").textContent = role.toUpperCase() + " Call Interface";
+
+        document.getElementById("startCall").onclick = startCall;
+        document.getElementById("endCall").onclick = endCall;
+
+        async function startCall() {
+            try {
+                pc = new RTCPeerConnection({
+                    iceServers: [
+                        { urls: "stun:stun.l.google.com:19302" },
+                        {
+                            urls: "turn:turn.anyfirewall.com:443?transport=tcp",
+                            username: "webrtc",
+                            credential: "webrtccode"
+                        }
+                    ]
+                });
+
+                ws = new WebSocket("wss://172.20.10.2:443/v1/ws/call");
+                
+                ws.onopen = async () => {
+                    console.log(role + " WebSocket opened");
+                    ws.send(JSON.stringify({ role }));
+                    if (role === "user") {
+                        const offer = await pc.createOffer();
+                        await pc.setLocalDescription(offer);
+                        ws.send(JSON.stringify({ "sdp": pc.localDescription }));
+                        document.getElementById("status").textContent = "Calling...";
+                    }
+                };
+
+                ws.onmessage = async (event) => {
+                    const data = JSON.parse(event.data);
+                    console.log(role + " Received message", data);
+                    
+                    if (data.sdp) {
+                        await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
+                        if (role === "police") {
+                            const answer = await pc.createAnswer();
+                            await pc.setLocalDescription(answer);
+                            ws.send(JSON.stringify({ "sdp": pc.localDescription }));
+                        }
+                    } else if (data.ice) {
+                        if (pc.remoteDescription) {
+                            await pc.addIceCandidate(new RTCIceCandidate(data.ice));
+                        } else {
+                            pendingICE.push(data.ice);
+                        }
+                    }
+                };
+
+                pc.onicecandidate = event => {
+                    if (event.candidate && ws.readyState === WebSocket.OPEN) {
+                        ws.send(JSON.stringify({ "ice": event.candidate.toJSON() }));
+                    }
+                };
+
+                pc.ontrack = event => {
+                    document.getElementById("remoteAudio").srcObject = event.streams[0];
+                };
+
+                pc.onconnectionstatechange = () => {
+                    if (pc.connectionState === "connected") {
+                        document.getElementById("status").textContent = "Connected!";
+                    }
+                };
+
+                ws.onclose = () => console.log(role + " WebSocket closed");
+                ws.onerror = (error) => console.error(role + " WebSocket error", error);
+            } catch (e) {
+                console.error(role + " Error in startCall", e);
+                document.getElementById("status").textContent = "Error: " + e.message;
+                endCall();
+            }
+        }
+
+        function endCall() {
+            if (pc) pc.close();
+            if (ws) ws.close();
+            document.getElementById("status").textContent = "Call ended";
+        }
+    </script>
+</body>
+</html>

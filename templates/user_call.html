@@ -1,9 +1,11 @@
 <!-- app/templates/user_call.html -->
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>User Call</title>
 </head>
+
 <body>
     <h1>User Call Interface</h1>
     <button onclick="startCall()">Call Police</button>
@@ -13,13 +15,17 @@
     <script>
         let pc;
         let ws;
+        let role = "user";
 
         async function startCall() {
             try {
-                pc = new RTCPeerConnection({
-                    iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
+                const pc = new RTCPeerConnection({
+                    iceServers: [
+                        { urls: "stun:stun.l.google.com:19302" },
+                        { urls: "turn:localhost:3478", username: "webrtc", credential: "my_secret" }
+                    ]
                 });
-                ws = new WebSocket("ws://localhost:8000/v1/ws/call");
+                ws = new WebSocket("wss://172.20.10.2:443/v1/ws/call");
 
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 stream.getTracks().forEach(track => {
@@ -46,26 +52,49 @@
                 pc.ontrack = event => {
                     const audio = document.getElementById("remoteAudio");
                     audio.srcObject = event.streams[0];
-                    console.log("User: Received remote track", event.streams[0]);
+                    // console.log("User: Received remote track", event.streams[0]);
+                    if (event.streams.length > 0) {
+                        audio.srcObject = event.streams[0];
+                    } else {
+                        console.warn("Police: Нет медиапотока!");
+                    }
                 };
 
                 const offer = await pc.createOffer();
                 await pc.setLocalDescription(offer);
-                ws.onopen = () => {
-                    ws.send(JSON.stringify({ "sdp": pc.localDescription }));
-                    document.getElementById("status").textContent = "Calling...";
-                    console.log("User: Sent SDP offer", pc.localDescription);
+                ws.onopen = async () => {
+                    debugger
+                    console.log(role + " WebSocket opened");
+                    ws.send(JSON.stringify({ role }));
+                    if (role === "police") {
+                        const offer = await pc.createOffer();
+                        await pc.setLocalDescription(offer);
+                        ws.send(JSON.stringify({ "sdp": pc.localDescription }));
+                        document.getElementById("status").textContent = "Calling...";
+                    }
                 };
 
                 ws.onmessage = async (event) => {
                     const data = JSON.parse(event.data);
                     console.log("User: Received message", data);
+
                     if (data.sdp) {
                         await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
                         console.log("User: Set remote SDP", data.sdp.type);
+
+                        // После установки SDP добавляем отложенные ICE-кандидаты
+                        pendingCandidates.forEach(async candidate => {
+                            await pc.addIceCandidate(new RTCIceCandidate(candidate));
+                        });
+                        pendingCandidates = [];
                     } else if (data.ice) {
-                        await pc.addIceCandidate(new RTCIceCandidate(data.ice));
-                        console.log("User: Added ICE candidate", data.ice);
+                        if (pc.remoteDescription) {
+                            await pc.addIceCandidate(new RTCIceCandidate(data.ice));
+                            console.log("User: Added ICE candidate", data.ice);
+                        } else {
+                            console.log("User: ICE candidate received before SDP, saving...");
+                            pendingCandidates.push(data.ice);
+                        }
                     } else if (data.error) {
                         document.getElementById("status").textContent = "Error: " + data.error;
                         endCall();
@@ -89,4 +118,5 @@
         }
     </script>
 </body>
+
 </html>

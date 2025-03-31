@@ -38,6 +38,7 @@ async def websocket_call(websocket: WebSocket):
         logger.info(f"WebSocket opened for {role}")
 
         while True:
+            print("kkkkkkkkkkkkkkkkkk")
             data = await websocket.receive_text()
             message = json.loads(data)
             logger.info(f"{role}: Received message {message}")

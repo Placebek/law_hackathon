@@ -14,12 +14,18 @@
         let pc;
         let ws;
 
+        let role = "police";
+
         async function startCall() {
             try {
                 pc = new RTCPeerConnection({
-                    iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
+                    iceServers: [{ urls: "stun:stun.l.google.com:19302" },
+                                {urls: "turn:172.20.10.2:3478", username: "webrtc", credential: "my_secret" }
+                    ]
                 });
-                ws = new WebSocket("ws://localhost:8000/v1/ws/call");
+                ws = new WebSocket("wss://172.20.10.2:443/v1/ws/call");
+
+                debugger
 
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 stream.getTracks().forEach(track => {
@@ -28,6 +34,7 @@
                 });
 
                 pc.onicecandidate = event => {
+                    debugger
                     if (event.candidate) {
                         ws.send(JSON.stringify({ "ice": event.candidate.toJSON() }));
                         console.log("Police: Sent ICE candidate", event.candidate);
@@ -37,6 +44,7 @@
                 };
 
                 pc.onconnectionstatechange = () => {
+                    debugger
                     console.log("Police: Connection state:", pc.connectionState);
                     if (pc.connectionState === "connected") {
                         document.getElementById("status").textContent = "Connected!";
@@ -44,13 +52,22 @@
                 };
 
                 pc.ontrack = event => {
+                    debugger
                     const audio = document.getElementById("remoteAudio");
                     audio.srcObject = event.streams[0];
                     console.log("Police: Received remote track", event.streams[0]);
                 };
 
-                ws.onopen = () => {
-                    console.log("Police: WebSocket opened");
+                ws.onopen = async () => {
+                    debugger
+                    console.log(role + " WebSocket opened");
+                    ws.send(JSON.stringify({ role }));
+                    if (role === "user") {
+                        const offer = await pc.createOffer();
+                        await pc.setLocalDescription(offer);
+                        ws.send(JSON.stringify({ "sdp": pc.localDescription }));
+                        document.getElementById("status").textContent = "Calling...";
+                    }
                 };
 
                 ws.onmessage = async (event) => {
@@ -60,15 +77,18 @@
                         document.getElementById("status").textContent = "Call received!";
                         await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
                         if (data.sdp.type === "offer") {
+                            debugger
                             const answer = await pc.createAnswer();
                             await pc.setLocalDescription(answer);
                             ws.send(JSON.stringify({ "sdp": pc.localDescription }));
                             console.log("Police: Sent SDP answer", pc.localDescription);
                         }
                     } else if (data.ice) {
+                        debugger
                         await pc.addIceCandidate(new RTCIceCandidate(data.ice));
                         console.log("Police: Added ICE candidate", data.ice);
                     } else if (data.error) {
+                        debugger
                         document.getElementById("status").textContent = "Error: " + data.error;
                         endCall();
                     }
