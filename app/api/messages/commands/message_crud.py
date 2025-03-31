@@ -72,6 +72,7 @@ async def get_chat_messages(chat_id: int, db: AsyncSession) -> list[MessageRespo
     query = select(Message).where(Message.chat_id == chat_id).order_by(Message.created_at)
     result = await db.execute(query)
     messages = result.scalars().all()
+
     return [MessageResponse(
         id=m.id,
         chat_id=m.chat_id,

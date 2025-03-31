@@ -26,6 +26,7 @@ class ConnectionManager:
                     "id": message.id,
                     "chat_id": message.chat_id,
                     "sender_id": message.sender_id,
+                    "role": message.role,
                     "content": message.content,
                     "created_at": message.created_at.isoformat()
                 }))
